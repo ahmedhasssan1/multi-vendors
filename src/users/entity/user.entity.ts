@@ -23,7 +23,7 @@ export class User {
   email: string;
 
   @Field()
-  @Column({ length: 30 })
+  @Column()
   password: string;
 
   @Field({ defaultValue: 'user' })

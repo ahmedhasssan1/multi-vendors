@@ -2,6 +2,38 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type User {
+  id: Int!
+  userName: String!
+  email: String!
+  password: String!
+  role: String!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
 type Query {
   hello: String!
+}
+
+type Mutation {
+  login(userData: UserLoginDto!): String!
+  signup(userInfo: UserDto!): User!
+}
+
+input UserLoginDto {
+  email: String!
+  password: String!
+}
+
+input UserDto {
+  userName: String!
+  email: String!
+  password: String!
+  role: String!
 }

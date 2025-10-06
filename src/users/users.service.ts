@@ -1,13 +1,76 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entity/user.entity';
 import { Repository } from 'typeorm';
+import { UserDto } from './dto/user.dto';
+import * as bcrypt from 'bcrypt';
+import { ClientDto } from './dto/client.dto';
+import { Client } from 'src/clients/entity/client.entity';
+import { ClientsService } from 'src/clients/clients.service';
+import { Vendor } from 'src/vendors/entity/vendors.entity';
+import { VendorsService } from 'src/vendors/vendors.service';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectRepository(User) private userRepo:Repository<User>){}
+  constructor(
+    @InjectRepository(User) private userRepo: Repository<User>,
+    private ClientService: ClientsService,
+    private vendorService: VendorsService,
+  ) {}
 
-    async register():Promise<User>{
-        
+  async generateToken() {}
+
+  async register(userInput: UserDto): Promise<User> {
+    const userExist = await this.userRepo.findOne({
+      where: { email: userInput.email },
+    });
+    if (userExist) {
+      throw new BadRequestException('this user already exist');
     }
+    const { password, ...rest } = userInput;
+    const hashed_password = await bcrypt.hash(password, 12);
+
+    const new_user = this.userRepo.create({
+      ...rest,
+      password: hashed_password,
+    });
+    if (userInput.role == 'client') {
+      await this.createClient({
+        name: userInput.userName,
+        email: userInput.email,
+        password: hashed_password,
+      });
+    } else {
+      await this.createVendor({
+        name: userInput.userName,
+        email: userInput.email,
+        password: hashed_password,
+      });
+    }
+    return await this.userRepo.save(new_user);
+  }
+  async createClient(clientInput: ClientDto): Promise<Client> {
+    return await this.ClientService.createClient(clientInput);
+  }
+  async createVendor(vendorInput: ClientDto): Promise<Vendor> {
+    return await this.vendorService.createVendor(vendorInput);
+  }
+  async findUserById(id: number): Promise<User> {
+    const user_exist = await this.userRepo.findOne({ where: { id } });
+    if (!user_exist) {
+      throw new NotFoundException('no user exist with this id');
+    }
+    return user_exist;
+  }
+  async findUserByEmail(email: string): Promise<User> {
+    const user_exist = await this.userRepo.findOne({ where: { email } });
+    if (!user_exist) {
+      throw new NotFoundException('no user exist with this email');
+    }
+    return user_exist;
+  }
 }

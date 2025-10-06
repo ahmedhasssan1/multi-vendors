@@ -33,12 +33,12 @@ export class Vendor {
   @Column({ type: 'int', nullable: true })
   rating: number;
 
-  @Field()
-  @Column()
+  @Field({nullable:true})
+  @Column({nullable:true})
   products: number;
 
   @Field()
-  @Column()
+  @Column({default:0})
   folowers_count: number;
 
   @Field()
