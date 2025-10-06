@@ -7,6 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
 import { RefreshTokenDto } from './dto/refreshToken.dto';
 import { ConfigService } from '@nestjs/config';
+import { Context } from '@nestjs/graphql';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -14,6 +16,7 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly redisClient: RedisService,
   ) {}
 
   async generateToken(payload: payloadDto): Promise<string> {
@@ -40,28 +43,34 @@ export class AuthService {
       role: userExist.role,
     };
     const access_token = await this.generateToken(payload);
-
+    const refresh_payload = {
+      sub: userExist.id,
+      role: userExist.role,
+    };
+    const refresh_token = await this.createRefreshtoken(refresh_payload);
+    res.cookie('refresh_token', refresh_token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+    });
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
+      maxAge: 60 * 60 * 1000,
     });
     return access_token;
   }
-  async createRefreshtoken(data: RefreshTokenDto,res:Response): Promise<string> {
-    const payload = {
-      sub: data.user_id,
-      role: data.role,
-    };
+  async createRefreshtoken(payload: any): Promise<string> {
     const Create_refresh_token = await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('REFRESH-SECRET'),
       expiresIn: '7d',
     });
-    res.cookie('refresh_token', Create_refresh_token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'strict',
-    });
     return Create_refresh_token;
+  }
+  async logout(token: string, res: Response) {
+    await this.redisClient.setval(`blacklist:${token}`, 'true');
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
   }
 }

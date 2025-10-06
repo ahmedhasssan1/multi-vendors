@@ -23,6 +23,7 @@ type Query {
 
 type Mutation {
   login(userData: UserLoginDto!): String!
+  logout: String!
   signup(userInfo: UserDto!): User!
 }
 
