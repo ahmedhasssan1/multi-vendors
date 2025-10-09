@@ -12,11 +12,15 @@ export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Field(()=>String)
+  @Column()
+  name:string
+
   @Column()
   @Field(() => Int)
   vendor_id: number;
 
-  @Field()
+  @Field((  )=>String)
   @Column({ length: 50 })
   category: string;
 
@@ -24,14 +28,13 @@ export class Product {
   @Column({ length: 255 })
   description: string;
 
-  @Field(() => Int, { nullable: true })
-  @Column({ type: 'int', nullable: true })
+  @Field(() => Float, { nullable: true })
+  @Column({ type: 'int', default:0 })
   rating: number;
 
-  // TypeORM stores decimal as string by default. Expose as Float in GraphQL.
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  price: string;
+  price: number;
 
   @Field(() => Int)
   @Column({ type: 'int', default: 0 })

@@ -17,6 +17,8 @@ export class Client {
   @Column({ length: 50 })
   name: string;
 
+  
+
   @Field()
   @Column({ length: 50, unique: true })
   email: string;

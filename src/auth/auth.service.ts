@@ -9,6 +9,7 @@ import { RefreshTokenDto } from './dto/refreshToken.dto';
 import { ConfigService } from '@nestjs/config';
 import { Context } from '@nestjs/graphql';
 import { RedisService } from 'src/redis/redis.service';
+import { SuperAdminService } from 'src/super-admin/super-admin.service';
 
 @Injectable()
 export class AuthService {

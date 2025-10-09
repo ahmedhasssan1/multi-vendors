@@ -61,7 +61,7 @@ export class JwtGuard implements CanActivate {
           const user = await this.userService.findUserById(decoded.sub);
           if (!user) throw new UnauthorizedException('Invalid user');
 
-          // 🧠 Generate new access token
+          //  Generate new access token
           const newPayload = {
             sub: user.id,
             email: user.email,
@@ -70,7 +70,7 @@ export class JwtGuard implements CanActivate {
 
           const newAccessToken = await this.jwtService.signAsync(newPayload, {
             secret: process.env.JWT_SECRET,
-            expiresIn: '30s',
+            expiresIn: '60s',
           });
 
           res.cookie('access_token', newAccessToken, {

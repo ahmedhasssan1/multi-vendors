@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from 'src/redis/redis.module';
 import { JwtGuard } from './guard/jwtGuard';
+import { SuperAdminModule } from 'src/super-admin/super-admin.module';
 @Module({
   imports: [
     RedisModule,

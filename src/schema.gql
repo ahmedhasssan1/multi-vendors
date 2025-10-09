@@ -17,6 +17,55 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type Client {
+  id: Int!
+  name: String!
+  email: String!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Vendor {
+  id: Int!
+  name: String!
+  email: String!
+  status: String!
+  rating: Int
+  products: Float
+  folowers_count: Float!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type SuperAdmin {
+  id: Int!
+  name: String!
+  email: String!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Followers {
+  id: Float!
+  vendor: Vendor!
+  client: Client!
+  create_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Product {
+  id: Int!
+  name: String!
+  vendor_id: Int!
+  category: String!
+  description: String!
+  rating: Float
+  price: Float!
+  stock_quantity: Int!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type Query {
   hello: String!
 }
@@ -25,6 +74,10 @@ type Mutation {
   login(userData: UserLoginDto!): String!
   logout: String!
   signup(userInfo: UserDto!): User!
+  createSuperAdmin(superAdminInput: superAdmindto!): SuperAdmin!
+  validateVendor(vendorId: Float!): Vendor!
+  followVendor(followInput: FollowVendorDto!): Followers!
+  createProduct(ProductInput: ProductDto!): Product!
 }
 
 input UserLoginDto {
@@ -37,4 +90,23 @@ input UserDto {
   email: String!
   password: String!
   role: String!
+}
+
+input superAdmindto {
+  name: String!
+  password: String!
+  email: String!
+}
+
+input FollowVendorDto {
+  vendor_id: Float!
+}
+
+input ProductDto {
+  name: String!
+  vendor_id: Float!
+  description: String!
+  category: String!
+  price: Float!
+  quantity: Float!
 }

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entity/user.entity';
@@ -13,6 +14,8 @@ import { Client } from 'src/clients/entity/client.entity';
 import { ClientsService } from 'src/clients/clients.service';
 import { Vendor } from 'src/vendors/entity/vendors.entity';
 import { VendorsService } from 'src/vendors/vendors.service';
+import { userRole } from 'src/common/enum/role.enum';
+import { SuperAdminService } from 'src/super-admin/super-admin.service';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +23,8 @@ export class UsersService {
     @InjectRepository(User) private userRepo: Repository<User>,
     private ClientService: ClientsService,
     private vendorService: VendorsService,
+    private superAdminService: SuperAdminService,
+    
   ) {}
 
   async generateToken() {}
@@ -38,18 +43,21 @@ export class UsersService {
       ...rest,
       password: hashed_password,
     });
-    if (userInput.role == 'client') {
+    if (userInput.role == userRole.client) {
       await this.createClient({
         name: userInput.userName,
         email: userInput.email,
         password: hashed_password,
       });
-    } else {
+    } else if(userInput.role==userRole.vendor) {
       await this.createVendor({
         name: userInput.userName,
         email: userInput.email,
         password: hashed_password,
+        
       });
+    }else{
+      throw new UnauthorizedException("incoorect role")
     }
     return await this.userRepo.save(new_user);
   }

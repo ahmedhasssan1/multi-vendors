@@ -19,14 +19,14 @@ export class Vendor {
   name: string;
 
   @Field()
-  @Column({ length: 50, unique: true })
+  @Column({  unique: true })
   email: string;
 
-  @Column({ length: 100 })
+  @Column()
   password: string;
 
   @Field()
-  @Column({ length: 20, default: 'active' })
+  @Column({ default: 'pending'})
   status: string;
 
   @Field(() => Int, { nullable: true })
