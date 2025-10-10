@@ -53,12 +53,12 @@ export class AuthService {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
+      maxAge: 60 * 60 * 1000 * 7,
     });
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
-      maxAge: 60 * 60 * 1000,
     });
     return access_token;
   }

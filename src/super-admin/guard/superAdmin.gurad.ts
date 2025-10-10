@@ -15,7 +15,8 @@ export class SuperAdminGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = GqlExecutionContext.create(context);
     const request = ctx.getContext().req;
-
+    console.log('debugging ',request);
+    
     const token = request.cookies.access_token;
     if (!token) {
       throw new BadRequestException('no acctess token in cookiesssss');

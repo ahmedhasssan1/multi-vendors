@@ -1,10 +1,14 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { User } from 'src/users/entity/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 @ObjectType()
@@ -19,26 +23,31 @@ export class Vendor {
   name: string;
 
   @Field()
-  @Column({  unique: true })
+  @Column({ unique: true })
   email: string;
 
   @Column()
   password: string;
 
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
+  @JoinColumn()
   @Field()
-  @Column({ default: 'pending'})
+  user: User;
+
+  @Field()
+  @Column({ default: 'pending' })
   status: string;
 
   @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
   rating: number;
 
-  @Field({nullable:true})
-  @Column({nullable:true})
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   products: number;
 
   @Field()
-  @Column({default:0})
+  @Column({ default: 0 })
   folowers_count: number;
 
   @Field()

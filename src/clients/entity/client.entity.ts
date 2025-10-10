@@ -1,10 +1,16 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Comment } from 'src/comments/entity/comment.entity';
+import { User } from 'src/users/entity/user.entity';
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  OneToMany
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-
 
 @ObjectType()
 @Entity('clients')
@@ -17,10 +23,13 @@ export class Client {
   @Column({ length: 50 })
   name: string;
 
-  
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
+  @JoinColumn()
+  @Field()
+  user: User;
 
   @Field()
-  @Column({ length: 50, unique: true })
+  @Column({ length: 50,  unique: true })
   email: string;
 
   @Column({ length: 100 })
@@ -33,7 +42,4 @@ export class Client {
   @Field()
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
-
-
-
 }

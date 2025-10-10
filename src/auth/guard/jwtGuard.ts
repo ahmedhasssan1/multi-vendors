@@ -11,11 +11,12 @@ import { JwtService } from '@nestjs/jwt';
 import { RedisService } from 'src/redis/redis.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from 'src/users/users.service';
-import * as dotenv from 'dotenv';
 import { Request, Response } from 'express';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+// Public route decorator
 export const IS_PUBLIC = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC, true);
 
@@ -34,60 +35,85 @@ export class JwtGuard implements CanActivate {
     const req: Request = ctx.getContext().req;
     const res: Response = ctx.getContext().res;
 
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) return true;
+    if (this.isPublic(context)) return true;
 
-    const token = req.cookies?.access_token;
-    if (!token) throw new UnauthorizedException('No access token provided');
+    const accessToken = req.cookies?.access_token;
+    const refreshToken = req.cookies?.refresh_token;
 
-    const inBlacklist = await this.redisService.getVal(`blacklist:${token}`);
-    if (inBlacklist) throw new UnauthorizedException('Token has been revoked');
+    if (!accessToken)
+      throw new UnauthorizedException('No access token provided');
+    if (!refreshToken)
+      throw new UnauthorizedException('No refresh token provided');
+
+    const isBlacklisted = await this.isTokenBlacklisted(accessToken);
+    if (isBlacklisted)
+      throw new UnauthorizedException('Token has been revoked');
 
     try {
-      //  Verify access token
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
-      });
+      const payload = await this.verifyAccessToken(accessToken);
       (req as any).user = payload;
+
       return true;
     } catch (err) {
-      // 5️ Handle expired token
       if (err.name === 'TokenExpiredError') {
-        try {
-          const decoded = this.jwtService.decode(token);
-          const user = await this.userService.findUserById(decoded.sub);
-          if (!user) throw new UnauthorizedException('Invalid user');
-
-          //  Generate new access token
-          const newPayload = {
-            sub: user.id,
-            email: user.email,
-            role: user.role,
-          };
-
-          const newAccessToken = await this.jwtService.signAsync(newPayload, {
-            secret: process.env.JWT_SECRET,
-            expiresIn: '60s',
-          });
-
-          res.cookie('access_token', newAccessToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'strict',
-            maxAge: 1000 * 60 * 60 * 24,
-          });
-
-          (req as any).user = newPayload;
-          return true;
-        } catch (e) {
-          throw new UnauthorizedException('Could not refresh token');
-        }
+        return await this.handleExpiredToken(req, res, refreshToken);
       }
 
       throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
+  private isPublic(context: ExecutionContext): boolean {
+    return this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+  }
+
+  private async verifyAccessToken(token: string) {
+    return this.jwtService.verifyAsync(token, {
+      secret: process.env.JWT_SECRET,
+    });
+  }
+
+  private async isTokenBlacklisted(token: string): Promise<boolean> {
+    return Boolean(await this.redisService.getVal(`blacklist:${token}`));
+  }
+
+  private async handleExpiredToken(
+    req: Request,
+    res: Response,
+    refreshToken: string,
+  ): Promise<boolean> {
+    try {
+      const decodedRefresh = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.REFRESH_SECRET,
+      });
+
+      const user = await this.userService.findUserById(decodedRefresh.sub);
+      if (!user) throw new UnauthorizedException('Invalid user');
+
+      const newPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      };
+
+      const newAccessToken = await this.jwtService.signAsync(newPayload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '60s',
+      });
+
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+      });
+
+      (req as any).user = newPayload;
+      return true;
+    } catch (error) {
+      throw new UnauthorizedException('Could not refresh token');
     }
   }
 }

@@ -9,8 +9,8 @@ import { VendorGuard } from './guard/vendor.guard';
 export class ProductsResolver {
   constructor(private readonly productsService: ProductsService) {}
 
-@UseGuards(VendorGuard)
-@Mutation(()=>Product)
+  @Mutation(()=>Product)
+  @UseGuards(VendorGuard)
 async createProduct(@Args("ProductInput")product:ProductDto){
   return await this.productsService.createProduct(product)
 }

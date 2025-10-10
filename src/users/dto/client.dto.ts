@@ -1,6 +1,7 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsEmail, IsString } from 'class-validator';
 import { userRole } from 'src/common/enum/role.enum';
+import { User } from '../entity/user.entity';
 
 @InputType()
 export class ClientDto {
@@ -11,6 +12,9 @@ export class ClientDto {
   @Field()
   @IsEmail()
   email: string;
+
+  @Field()
+  user:User
 
   @Field()
   @IsString()

@@ -15,7 +15,7 @@ import { SuperAdminModule } from 'src/super-admin/super-admin.module';
       imports:[ConfigModule],
       useFactory: async (configService:ConfigService)=>({
         secret:configService.get<string>("JWT_SECRET"),
-        signOptions: { expiresIn: '3h' },
+        signOptions: { expiresIn: '40s' },
         global: true,
       }),
       inject:[ConfigService]

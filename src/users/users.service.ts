@@ -43,23 +43,25 @@ export class UsersService {
       ...rest,
       password: hashed_password,
     });
+    await this.userRepo.save(new_user);
     if (userInput.role == userRole.client) {
       await this.createClient({
         name: userInput.userName,
         email: userInput.email,
         password: hashed_password,
+        user:new_user
       });
     } else if(userInput.role==userRole.vendor) {
       await this.createVendor({
         name: userInput.userName,
         email: userInput.email,
         password: hashed_password,
-        
+        user:new_user
       });
     }else{
       throw new UnauthorizedException("incoorect role")
     }
-    return await this.userRepo.save(new_user);
+    return new_user
   }
   async createClient(clientInput: ClientDto): Promise<Client> {
     return await this.ClientService.createClient(clientInput);

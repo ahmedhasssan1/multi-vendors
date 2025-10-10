@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -18,10 +19,12 @@ export class Followers {
   id: number;
 
   @ManyToOne(()=>Vendor,(vendor)=>vendor.id,{onDelete:"CASCADE"})
+  @JoinColumn()
   @Field()
   vendor: Vendor;
 
   @ManyToOne(()=>Client,(client)=>client.id,{onDelete:"CASCADE"})
+  @JoinColumn()
   @Field()
   client: Client;
 

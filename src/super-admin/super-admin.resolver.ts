@@ -20,8 +20,8 @@ export class SuperAdminResolver {
   }
 
 
-  @Mutation(() => Vendor)
   @UseGuards(SuperAdminGuard)
+  @Mutation(() => Vendor)
   async validateVendor(@Args('vendorId') vendorId: number) {
     return await this.vendorService.validateVendor(vendorId);
   }

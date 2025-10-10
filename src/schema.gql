@@ -20,6 +20,7 @@ scalar DateTime
 type Client {
   id: Int!
   name: String!
+  user: User!
   email: String!
   created_at: DateTime!
   updated_at: DateTime!
@@ -29,6 +30,7 @@ type Vendor {
   id: Int!
   name: String!
   email: String!
+  user: User!
   status: String!
   rating: Int
   products: Float
