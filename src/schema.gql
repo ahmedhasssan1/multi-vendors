@@ -68,6 +68,23 @@ type Product {
   updated_at: DateTime!
 }
 
+type Cart {
+  id: Int!
+  client: Client!
+  total_price: Float!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type CartItem {
+  id: Int!
+  cart: Cart!
+  product: Product!
+  quantity: Int!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type Query {
   hello: String!
 }
@@ -80,6 +97,7 @@ type Mutation {
   validateVendor(vendorId: Float!): Vendor!
   followVendor(followInput: FollowVendorDto!): Followers!
   createProduct(ProductInput: ProductDto!): Product!
+  addProduct(addProductInfo: CartItemDto!): CartItem!
 }
 
 input UserLoginDto {
@@ -110,5 +128,10 @@ input ProductDto {
   description: String!
   category: String!
   price: Float!
+  quantity: Float!
+}
+
+input CartItemDto {
+  product_id: Float!
   quantity: Float!
 }

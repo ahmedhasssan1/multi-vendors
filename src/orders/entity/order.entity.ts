@@ -2,9 +2,13 @@ import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 import { Cart } from 'src/cart/entity/cart.entity';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
 } from 'typeorm';
-
 
 @ObjectType()
 @Entity('orders')
@@ -13,10 +17,9 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-   @Column()
-  @Field(()=>Int)
-  cart_id: number
-  ;
+  @ManyToOne(() => Cart, (cart) => cart.id, { onDelete: 'CASCADE' })
+  @Field(() => Int)
+  cart_id: Cart;
 
   @Field()
   @Column({ length: 20 })
@@ -24,7 +27,7 @@ export class Order {
 
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  total: string;
+  total: number;
 
   @Field()
   @Column({ length: 255 })
@@ -41,6 +44,4 @@ export class Order {
   @Field()
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
-
-
 }

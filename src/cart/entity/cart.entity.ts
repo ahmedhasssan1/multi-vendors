@@ -21,7 +21,7 @@ export class Cart {
 
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  total_price: string;
+  total_price: number;
 
   @Field()
   @CreateDateColumn({ type: 'timestamp' })

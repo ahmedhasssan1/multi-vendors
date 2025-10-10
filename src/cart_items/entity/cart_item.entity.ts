@@ -2,10 +2,14 @@ import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Cart } from 'src/cart/entity/cart.entity';
 import { Product } from 'src/products/entity/products.entity';
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  ManyToOne, JoinColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-
 
 @ObjectType()
 @Entity('cart_items')
@@ -14,14 +18,14 @@ export class CartItem {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  @Field(()=>Int)
-  cart_id: number;
+  @ManyToOne(()=>Cart,(cart)=>cart.id,{onDelete:"CASCADE"})
+  @Field(() => Cart)
+  cart: Cart;
 
   @ManyToOne(() => Product, (p) => p.id, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'product_id' })
   @Field(() => Product)
-  product: Product;
+  @JoinColumn({ name: 'product_id' })
+  product: Product; 
 
   @Field(() => Int)
   @Column({ type: 'int', default: 1 })

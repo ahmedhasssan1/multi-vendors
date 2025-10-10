@@ -34,4 +34,13 @@ export class ClientsService {
     }
     return client
   }
+  async findClientByUserId(id:number):Promise<Client>{
+    const client=await  this.ClientRepo.findOne({where:{
+      user:{id}
+    }})
+    if(!client){
+      throw new NotFoundException("there is no  client with this  user id");
+    }
+    return client;
+  }
 }

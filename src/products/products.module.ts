@@ -15,7 +15,8 @@ import { JwtModule } from '@nestjs/jwt';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '1d' },
     }),
-  ],
+  ],  
   providers: [ProductsResolver, ProductsService],
+  exports:[ProductsService]
 })
 export class ProductsModule {}
