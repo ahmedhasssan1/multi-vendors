@@ -6,6 +6,8 @@ import { Response } from 'express';
 import { CartItem } from './entity/cart_item.entity';
 import { UseGuards } from '@nestjs/common';
 import { clientGuard } from 'src/common/guards/client.guard';
+import { QuantityDto } from './dto/updateQuantity.dto';
+import { recommendedRules } from 'graphql';
 @Resolver()
 export class CartItemsResolver {
   constructor(private readonly cartItemsService: CartItemsService) {}
@@ -17,5 +19,13 @@ export class CartItemsResolver {
     @Context() ctx: { req: Request; res: Response },
   ) {
     return await this.cartItemsService.createCArtItem(product, ctx.req);
+  }
+
+  @Mutation(() => CartItem)
+  async increaseCartItemQuantiy(
+    @Args('increaseData') info: QuantityDto,
+    @Context() ctx: { req: Request },
+  ) {
+    return await this.cartItemsService.increaseCartItemQuantity(info, ctx.req);
   }
 }

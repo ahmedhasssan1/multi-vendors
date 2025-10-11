@@ -13,6 +13,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { UsersService } from 'src/users/users.service';
 import { Request, Response } from 'express';
 import * as dotenv from 'dotenv';
+import { ConfigService } from '@nestjs/config';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ export class JwtGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly authService: AuthService,
     private readonly userService: UsersService,
+    private readonly configservice: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -86,9 +88,12 @@ export class JwtGuard implements CanActivate {
     refreshToken: string,
   ): Promise<boolean> {
     try {
+      console.log('1️⃣ Verifying refresh token...');
+
       const decodedRefresh = await this.jwtService.verifyAsync(refreshToken, {
-        secret: process.env.REFRESH_SECRET,
+        secret: this.configservice.get<string>('REFRESH_SECRET'),
       });
+      console.log('debugging ', '3fasa');
 
       const user = await this.userService.findUserById(decodedRefresh.sub);
       if (!user) throw new UnauthorizedException('Invalid user');
@@ -98,11 +103,13 @@ export class JwtGuard implements CanActivate {
         email: user.email,
         role: user.role,
       };
+      console.log('debugging ', '1');
 
       const newAccessToken = await this.jwtService.signAsync(newPayload, {
         secret: process.env.JWT_SECRET,
-        expiresIn: '60s',
+        expiresIn: '2m',
       });
+      console.log('debugging ', '2');
 
       res.cookie('access_token', newAccessToken, {
         httpOnly: true,

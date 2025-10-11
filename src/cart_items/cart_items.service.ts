@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartItem } from './entity/cart_item.entity';
 import { Repository } from 'typeorm';
@@ -10,6 +14,8 @@ import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { CartService } from 'src/cart/cart.service';
 import { ClientsService } from 'src/clients/clients.service';
+import { QuantityDto } from './dto/updateQuantity.dto';
+import { find } from 'rxjs';
 @Injectable()
 export class CartItemsService {
   constructor(
@@ -21,6 +27,13 @@ export class CartItemsService {
     private cartService: CartService,
     private clientService: ClientsService,
   ) {}
+
+  async decode(code: string) {
+    const token = await this.jwtservice.verifyAsync(code, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+    });
+    return token;
+  }
 
   async createCArtItem(cartItem: CartItemDto, req: Request) {
     const product = await this.ProductService.findProductById(
@@ -35,7 +48,7 @@ export class CartItemsService {
     });
     const user = await this.UserService.findUserById(decode.sub);
     const findClient = await this.clientService.findClientByUserId(user.id);
-    
+
     const total = await this.getTotalAmount(findClient.id);
     const cart_exist = await this.cartService.caheckingCartExist(
       findClient.id,
@@ -54,6 +67,9 @@ export class CartItemsService {
         `there is only ${product.stock_quantity} pices`,
       );
     }
+    product.stock_quantity -= cartItem.quantity;
+
+    await this.ProductService.saveProduct(product);
     if (cartItem_product_exist) {
       cartItem_product_exist.quantity += cartItem.quantity;
       const updated = await this.cartItemRepo.save(cartItem_product_exist);
@@ -85,5 +101,64 @@ export class CartItemsService {
     }, 0);
 
     return totalAmount;
+  }
+  async increaseCartItemQuantity(
+    cartItem: QuantityDto,
+    req: Request,
+  ): Promise<CartItem> {
+    const token = req.cookies.access_token;
+    const decode = await this.decode(token);
+    const client = await this.clientService.findClientByUserId(decode.sub);
+    const cart = await this.cartService.findClientCart(client.id);
+    const product = await this.ProductService.findProductById(
+      cartItem.product_id,
+    );
+    if (!product) {
+      throw new NotFoundException('this product not exist anymore');
+    }
+    const find_CartItem = await this.cartItemRepo.findOne({
+      where: {
+        cart: { id: cart.id },
+      },
+    });
+
+    if (!find_CartItem) {
+      throw new BadRequestException('this product does not exist in cart');
+    }
+    if (cartItem.quantity < 0) {
+      const decreaseAmount = Math.abs(cartItem.quantity);
+
+      if (find_CartItem.quantity < decreaseAmount) {
+        throw new BadRequestException(
+          'You cannot remove more items than exist in the cart',
+        );
+      }
+
+      product.stock_quantity += decreaseAmount;
+      find_CartItem.quantity -= decreaseAmount;
+
+      await Promise.all([
+        this.ProductService.saveProduct(product),
+        this.cartItemRepo.save(find_CartItem),
+      ]);
+
+      cart.total_price = await this.getTotalAmount(client.id);
+      await this.cartService.saveCart(cart);
+
+      return find_CartItem;
+    }
+
+    if (product.stock_quantity - cartItem.quantity < 0) {
+      throw new BadRequestException(
+        'this product does not have this quantity decrease the quantity',
+      );
+    }
+    product.stock_quantity -= cartItem.quantity;
+    await this.ProductService.saveProduct(product);
+    find_CartItem.quantity += cartItem.quantity;
+    const totalAmount = await this.getTotalAmount(client.id);
+    cart.total_price = totalAmount;
+    await this.cartService.saveCart(cart);
+    return await this.cartItemRepo.save(find_CartItem);
   }
 }

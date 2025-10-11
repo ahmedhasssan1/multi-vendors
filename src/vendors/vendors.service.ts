@@ -1,5 +1,5 @@
 import {
-    BadRequestException,
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Vendor } from './entity/vendors.entity';
 import { Repository } from 'typeorm';
 import { ClientDto } from 'src/users/dto/client.dto';
+import { throws } from 'assert';
 
 @Injectable()
 export class VendorsService {
@@ -52,13 +53,24 @@ export class VendorsService {
     }
     return vendor;
   }
-  async vendorFollowersIncrease(vendorId:number){
-    const vendor =await this.vendorRepo.findOne({where:{id:vendorId}});
-    if(!vendor){
-        throw new NotFoundException("this vendor not exist")
+  async vendorFollowersIncrease(vendorId: number) {
+    const vendor = await this.vendorRepo.findOne({ where: { id: vendorId } });
+    if (!vendor) {
+      throw new NotFoundException('this vendor not exist');
     }
     vendor.folowers_count++;
     await this.vendorRepo.save(vendor);
   }
- 
+  async saveVendor(vendor: Vendor): Promise<string> {
+    await this.vendorRepo.save(vendor);
+    return 'vendor saved';
+  }
+  async findVendorByUserId(id: number): Promise<Vendor> {
+    const vendor = await this.vendorRepo.findOne({ where: { user: { id } } });
+    if(!vendor){
+      throw new NotFoundException("this vendor with this user id not exist")
+    }
+    return vendor;
+  }
+
 }

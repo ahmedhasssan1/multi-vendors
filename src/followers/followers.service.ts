@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Delete, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Followers } from './entity/followers.enity';
 import { Repository } from 'typeorm';
@@ -56,4 +56,33 @@ export class FollowersService {
     await this.vendorserice.vendorFollowersIncrease(vendor.id);
     return await this.followersRepo.save(new_follow);
   }
+
+  async unfollow(vendorId:number,req:Request):Promise<string>{
+      const vendor=await this.vendorserice.findVendorById(vendorId);
+      if(!vendor){
+        throw new NotFoundException("this vendor not exist ");
+      }
+      const token=req.cookies.access_token;
+      const decode=await this.jwtService.verifyAsync(token,{
+        secret: this.configService.get<string>("JWT_SECRET")
+      })
+      const clinet=await this.CleintService.findClientByUserId(decode.sub);
+      
+      const Follow_exist=await this.followersRepo.findOne({
+        where:{
+          vendor:{id:vendorId},
+          client:{id:clinet.id}
+        }
+      })
+      if(!Follow_exist){
+        throw new BadRequestException("you are not following him")
+      }
+      await this.followersRepo.remove(Follow_exist);
+      if(vendor.folowers_count>0){
+        vendor.folowers_count--;
+      }
+      await this.vendorserice.saveVendor(vendor);
+      return "unfollow done";
+  }
+
 }

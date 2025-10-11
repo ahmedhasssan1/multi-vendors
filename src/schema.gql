@@ -87,6 +87,13 @@ type CartItem {
 
 type Query {
   hello: String!
+  getAllProducts(paginationInput: PaginationDto!): [Product!]!
+}
+
+input PaginationDto {
+  page: Int! = 1
+  limit: Int! = 2
+  category: String!
 }
 
 type Mutation {
@@ -96,8 +103,10 @@ type Mutation {
   createSuperAdmin(superAdminInput: superAdmindto!): SuperAdmin!
   validateVendor(vendorId: Float!): Vendor!
   followVendor(followInput: FollowVendorDto!): Followers!
+  unfollow(unfollwInfo: Float!): String!
   createProduct(ProductInput: ProductDto!): Product!
   addProduct(addProductInfo: CartItemDto!): CartItem!
+  increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
 }
 
 input UserLoginDto {
@@ -134,4 +143,9 @@ input ProductDto {
 input CartItemDto {
   product_id: Float!
   quantity: Float!
+}
+
+input QuantityDto {
+  quantity: Float!
+  product_id: Float!
 }

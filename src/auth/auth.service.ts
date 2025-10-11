@@ -55,18 +55,21 @@ export class AuthService {
       sameSite: 'strict',
       maxAge: 60 * 60 * 1000 * 7,
     });
+    
     res.cookie('access_token', access_token, {
       httpOnly: true,
       secure: false,
       sameSite: 'strict',
+      maxAge: 60 * 60 * 1000 * 7,
     });
     return access_token;
   }
   async createRefreshtoken(payload: any): Promise<string> {
     const Create_refresh_token = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('REFRESH-SECRET'),
+      secret:  this.configService.get<string>('REFRESH_SECRET'),
       expiresIn: '7d',
     });
+
     return Create_refresh_token;
   }
   async logout(token: string, res: Response) {
