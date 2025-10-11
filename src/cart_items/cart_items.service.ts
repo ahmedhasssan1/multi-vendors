@@ -102,7 +102,7 @@ export class CartItemsService {
 
     return totalAmount;
   }
-  async increaseCartItemQuantity(
+  async updateCartItemQuantity(
     cartItem: QuantityDto,
     req: Request,
   ): Promise<CartItem> {
@@ -113,12 +113,11 @@ export class CartItemsService {
     const product = await this.ProductService.findProductById(
       cartItem.product_id,
     );
-    if (!product) {
-      throw new NotFoundException('this product not exist anymore');
-    }
+
     const find_CartItem = await this.cartItemRepo.findOne({
       where: {
         cart: { id: cart.id },
+        product:{id:cartItem.product_id}
       },
     });
 
@@ -154,11 +153,14 @@ export class CartItemsService {
       );
     }
     product.stock_quantity -= cartItem.quantity;
-    await this.ProductService.saveProduct(product);
     find_CartItem.quantity += cartItem.quantity;
+    await Promise.all([
+       this.ProductService.saveProduct(product),
+       this.cartItemRepo.save(find_CartItem)
+    ])
     const totalAmount = await this.getTotalAmount(client.id);
     cart.total_price = totalAmount;
     await this.cartService.saveCart(cart);
-    return await this.cartItemRepo.save(find_CartItem);
+    return find_CartItem
   }
 }

@@ -26,6 +26,6 @@ export class CartItemsResolver {
     @Args('increaseData') info: QuantityDto,
     @Context() ctx: { req: Request },
   ) {
-    return await this.cartItemsService.increaseCartItemQuantity(info, ctx.req);
+    return await this.cartItemsService.updateCartItemQuantity(info, ctx.req);
   }
 }
