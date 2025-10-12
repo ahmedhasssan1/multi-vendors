@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartItem } from './entity/cart_item.entity';
@@ -35,56 +36,58 @@ export class CartItemsService {
     return token;
   }
 
-  async createCArtItem(cartItem: CartItemDto, req: Request) {
+  async createCartItem(cartItem: CartItemDto, req: Request) {
+    const token = req.cookies?.access_token;
+    if (!token) throw new BadRequestException('No token provided');
+
+    const decoded = await this.decode(token);
+    const user = await this.UserService.findUserById(decoded.sub);
+    const client = await this.clientService.findClientByUserId(user.id);
+
     const product = await this.ProductService.findProductById(
       cartItem.product_id,
     );
-    const token = req.cookies?.access_token;
-    if (!token) {
-      throw new BadRequestException('no  token provided');
+    if (!product) throw new NotFoundException('Product not found');
+
+    if (product.stock_quantity < cartItem.quantity) {
+      throw new BadRequestException(
+        `Only ${product.stock_quantity} pieces available`,
+      );
     }
-    const decode = await this.jwtservice.verifyAsync(token, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-    });
-    const user = await this.UserService.findUserById(decode.sub);
-    const findClient = await this.clientService.findClientByUserId(user.id);
 
-    const total = await this.getTotalAmount(findClient.id);
-    const cart_exist = await this.cartService.caheckingCartExist(
-      findClient.id,
-      total,
-    );
+    const cart = await this.cartService.checkingCartExist(client.id);
 
-    const cartItem_product_exist = await this.cartItemRepo.findOne({
+    let cartItemEntity = await this.cartItemRepo.findOne({
       where: {
-        cart: { id: cart_exist.id },
+        cart: { id: cart.id },
         product: { id: product.id },
       },
     });
 
-    if (product.stock_quantity < cartItem.quantity) {
-      throw new BadRequestException(
-        `there is only ${product.stock_quantity} pices`,
-      );
-    }
     product.stock_quantity -= cartItem.quantity;
-
     await this.ProductService.saveProduct(product);
-    if (cartItem_product_exist) {
-      cartItem_product_exist.quantity += cartItem.quantity;
-      const updated = await this.cartItemRepo.save(cartItem_product_exist);
-      return await this.cartItemRepo.findOne({
-        where: { id: updated.id },
-        relations: ['product', 'cart'],
+
+    if (cartItemEntity) {
+      cartItemEntity.quantity += cartItem.quantity;
+      await this.cartItemRepo.save(cartItemEntity);
+    } else {
+      cartItemEntity = this.cartItemRepo.create({
+        cart,
+        product,
+        quantity: cartItem.quantity,
       });
+      await this.cartItemRepo.save(cartItemEntity);
     }
 
-    const new_cartItem = this.cartItemRepo.create({
-      cart: cart_exist,
-      product: product,
-      quantity: cartItem.quantity,
+    // Update total price after all changes
+    const total = await this.getTotalAmount(client.id);
+    cart.total_price = total;
+    await this.cartService.saveCart(cart);
+
+    return await this.cartItemRepo.findOne({
+      where: { id: cartItemEntity.id },
+      relations: ['product', 'cart'],
     });
-    return await this.cartItemRepo.save(new_cartItem);
   }
   async getTotalAmount(client_id: number): Promise<number> {
     const cartItems = await this.cartItemRepo.find({
@@ -117,7 +120,7 @@ export class CartItemsService {
     const find_CartItem = await this.cartItemRepo.findOne({
       where: {
         cart: { id: cart.id },
-        product:{id:cartItem.product_id}
+        product: { id: cartItem.product_id },
       },
     });
 
@@ -155,12 +158,33 @@ export class CartItemsService {
     product.stock_quantity -= cartItem.quantity;
     find_CartItem.quantity += cartItem.quantity;
     await Promise.all([
-       this.ProductService.saveProduct(product),
-       this.cartItemRepo.save(find_CartItem)
-    ])
+      this.ProductService.saveProduct(product),
+      this.cartItemRepo.save(find_CartItem),
+    ]);
     const totalAmount = await this.getTotalAmount(client.id);
     cart.total_price = totalAmount;
     await this.cartService.saveCart(cart);
-    return find_CartItem
+    return find_CartItem;
+  }
+  async deleteCartItem(productId: number, req: Request) {
+    const token = req.cookies.access_token;
+    const decode = await this.decode(token);
+    const client = await this.clientService.findClientByUserId(decode.sub);
+    const cart = await this.cartService.findClientCart(client.id);
+    const product = await this.ProductService.findProductById(productId);
+    const cart_item = await this.cartItemRepo.findOne({
+      where: {
+        product: { id: productId },
+        cart: { id: cart.id },
+      },
+    });
+    if (!cart_item) {
+      throw new UnauthorizedException('this product not exist in ypur cart');
+    }
+    await this.cartItemRepo.remove(cart_item);
+    const total = await this.getTotalAmount(client.id);
+    cart.total_price = total;
+    await this.cartService.saveCart(cart);
+    return 'the product deleted from cart';
   }
 }

@@ -107,6 +107,7 @@ type Mutation {
   createProduct(ProductInput: ProductDto!): Product!
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
+  deleteCartItem(cartItemData: Float!): String!
 }
 
 input UserLoginDto {

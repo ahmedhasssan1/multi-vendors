@@ -18,7 +18,7 @@ export class CartItemsResolver {
     @Args('addProductInfo') product: CartItemDto,
     @Context() ctx: { req: Request; res: Response },
   ) {
-    return await this.cartItemsService.createCArtItem(product, ctx.req);
+    return await this.cartItemsService.createCartItem(product, ctx.req);
   }
 
   @Mutation(() => CartItem)
@@ -27,5 +27,9 @@ export class CartItemsResolver {
     @Context() ctx: { req: Request },
   ) {
     return await this.cartItemsService.updateCartItemQuantity(info, ctx.req);
+  }
+  @Mutation(()=>String)
+  async deleteCartItem(@Args("cartItemData")product_id:number,@Context() ctx:{req:Request}){
+    return await this.cartItemsService.deleteCartItem(product_id,ctx.req); 
   }
 }
