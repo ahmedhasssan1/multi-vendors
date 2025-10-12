@@ -187,4 +187,28 @@ export class CartItemsService {
     await this.cartService.saveCart(cart);
     return 'the product deleted from cart';
   }
+  async getclientCartItems(req: Request) {
+    const token = req.cookies.access_token;
+    if (!token) {
+      throw new NotFoundException('nottoken provided please login in');
+    }
+    const decode = await this.decode(token);
+
+    const client = await this.clientService.findClientByUserId(decode.sub);
+    if (!client) {
+      throw new NotFoundException('this client not exist');
+    }
+    const cart = await this.cartService.findClientCart(client.id);
+    const cartItems = await this.cartItemRepo.find({
+      where: {
+        cart: { id: cart.id },
+      },relations:["product"]
+    });
+    if (cartItems.length < 1) {
+      throw new NotFoundException('no producted added');
+    }
+    
+    const total_price = cart.total_price;
+    return { total_price, cartItems };
+  }
 }

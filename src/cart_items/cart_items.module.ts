@@ -25,5 +25,6 @@ import { ClientsModule } from 'src/clients/clients.module';
     ClientsModule
   ],
   providers: [CartItemsResolver, CartItemsService],
+  exports:[CartItemsService]
 })
 export class CartItemsModule {}

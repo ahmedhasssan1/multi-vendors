@@ -47,11 +47,11 @@ type SuperAdmin {
   updated_at: DateTime!
 }
 
-type Followers {
-  id: Float!
-  vendor: Vendor!
+type Cart {
+  id: Int!
   client: Client!
-  create_at: DateTime!
+  total_price: Float!
+  created_at: DateTime!
   updated_at: DateTime!
 }
 
@@ -68,20 +68,20 @@ type Product {
   updated_at: DateTime!
 }
 
-type Cart {
-  id: Int!
-  client: Client!
-  total_price: Float!
-  created_at: DateTime!
-  updated_at: DateTime!
-}
-
 type CartItem {
   id: Int!
   cart: Cart!
   product: Product!
   quantity: Int!
   created_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Followers {
+  id: Float!
+  vendor: Vendor!
+  client: Client!
+  create_at: DateTime!
   updated_at: DateTime!
 }
 
@@ -102,12 +102,13 @@ type Mutation {
   signup(userInfo: UserDto!): User!
   createSuperAdmin(superAdminInput: superAdmindto!): SuperAdmin!
   validateVendor(vendorId: Float!): Vendor!
-  followVendor(followInput: FollowVendorDto!): Followers!
-  unfollow(unfollwInfo: Float!): String!
-  createProduct(ProductInput: ProductDto!): Product!
+  checkout: String!
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
   deleteCartItem(cartItemData: Float!): String!
+  createProduct(ProductInput: ProductDto!): Product!
+  followVendor(followInput: FollowVendorDto!): Followers!
+  unfollow(unfollwInfo: Float!): String!
 }
 
 input UserLoginDto {
@@ -128,8 +129,14 @@ input superAdmindto {
   email: String!
 }
 
-input FollowVendorDto {
-  vendor_id: Float!
+input CartItemDto {
+  product_id: Float!
+  quantity: Float!
+}
+
+input QuantityDto {
+  quantity: Float!
+  product_id: Float!
 }
 
 input ProductDto {
@@ -141,12 +148,6 @@ input ProductDto {
   quantity: Float!
 }
 
-input CartItemDto {
-  product_id: Float!
-  quantity: Float!
-}
-
-input QuantityDto {
-  quantity: Float!
-  product_id: Float!
+input FollowVendorDto {
+  vendor_id: Float!
 }
