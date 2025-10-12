@@ -1,23 +1,26 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { CartItemsService } from 'src/cart_items/cart_items.service';
+import { error } from 'console';
 
 @Injectable()
 export class StripeService {
   private stripe: Stripe;
+  private webhookSecret: string;
   constructor(
     private ConfigService: ConfigService,
     private CartItemService: CartItemsService,
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
-
     this.stripe = new Stripe(stripeKey as string);
+    this.webhookSecret = this.ConfigService.get<string>('WEBHOOK_SECRET')!;
   }
   async createCheckoutSession(req: Request): Promise<Stripe.Checkout.Session> {
     const cart = await this.CartItemService.getclientCartItems(req);
@@ -44,9 +47,11 @@ export class StripeService {
           setup_future_usage: 'on_session',
         },
       },
-      saved_payment_method_options: {
-        payment_method_remove: 'enabled',
-        payment_method_save: 'enabled',
+      //   saved_payment_method_options: {
+      //     payment_method_remove: 'enabled',
+      //   },
+      phone_number_collection: {
+        enabled: true,
       },
       success_url:
         'https://www.istockphoto.com/photo/businessman-using-laptop-to-online-payment-banking-and-online-shopping-financial-gm2078490118-565054317',
@@ -55,4 +60,6 @@ export class StripeService {
     });
     return session;
   }
+
+  
 }
