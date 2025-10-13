@@ -77,6 +77,13 @@ type CartItem {
   updated_at: DateTime!
 }
 
+type SessionStatusResult {
+  charge_id: String
+  status: String
+  customer_email: String
+  amount_total: Float
+}
+
 type Followers {
   id: Float!
   vendor: Vendor!
@@ -87,6 +94,7 @@ type Followers {
 
 type Query {
   hello: String!
+  sessionStatus(sessionId: String!): SessionStatusResult!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
 }
 

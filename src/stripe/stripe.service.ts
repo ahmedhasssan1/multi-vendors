@@ -61,5 +61,27 @@ export class StripeService {
     return session;
   }
 
-  
+  async sessiondata(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['payment_intent'],
+    });
+    const payment_intent = session.payment_intent as Stripe.PaymentIntent;
+    if (!payment_intent || payment_intent.latest_charge) {
+      return {
+        charge_id: null,
+        session_staus: session.status,
+        customer_email: session.customer_details?.email,
+        message: 'no ccharge id',
+      };
+    }
+    const charge = await this.stripe.charges.retrieve(
+      payment_intent.latest_charge as string,
+    );
+    return {
+      charge_id: charge.id,
+      status: session.payment_status,
+      customer_email: session.customer_details?.email,
+      amount_total: (session.amount_total ?? 0) / 100,
+    };
+  }
 }

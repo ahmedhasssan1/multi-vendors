@@ -2,6 +2,7 @@ import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { StripeService } from './stripe.service';
 import { Request } from 'express';
 import Stripe from 'stripe';
+import { SessionStatusResult } from './dto/sessionStatus.dto';
 // import { sessionSataus } from './sessionstatus.controller';
 @Resolver()
 export class StripeResolver {
@@ -14,6 +15,10 @@ export class StripeResolver {
     console.log('debugging ', session);
 
     return session.url;
+  }
+  @Query(()=>SessionStatusResult)
+  async sessionStatus(@Args("sessionId")session:string){
+    return await this.stripeService.sessiondata(session)
   }
   
 }
