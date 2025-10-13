@@ -84,6 +84,11 @@ type SessionStatusResult {
   amount_total: Float
 }
 
+type CheckoutResponse {
+  session_url: String!
+  session_id: String!
+}
+
 type Followers {
   id: Float!
   vendor: Vendor!
@@ -110,7 +115,7 @@ type Mutation {
   signup(userInfo: UserDto!): User!
   createSuperAdmin(superAdminInput: superAdmindto!): SuperAdmin!
   validateVendor(vendorId: Float!): Vendor!
-  checkout: String!
+  checkout: CheckoutResponse!
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
   deleteCartItem(cartItemData: Float!): String!
