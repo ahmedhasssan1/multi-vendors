@@ -9,6 +9,15 @@ import Stripe from 'stripe';
 import { Request, Response } from 'express';
 import { CartItemsService } from 'src/cart_items/cart_items.service';
 import * as dotenv from 'dotenv';
+import { NoUnusedFragmentsRule } from 'graphql';
+import { OrdersService } from 'src/orders/orders.service';
+
+const payload = {
+  order_staus: String,
+  total: Number,
+  shipping_addres: String,
+  payment_method: String,
+};
 @Injectable()
 export class StripeService {
   private stripe: Stripe;
@@ -16,6 +25,7 @@ export class StripeService {
   constructor(
     private ConfigService: ConfigService,
     private CartItemService: CartItemsService,
+    private OrderServive:OrdersService
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
@@ -40,14 +50,17 @@ export class StripeService {
         },
         quantity: item.quantity,
       })),
-      customer_email:cart.client_email,
+      customer_email: cart.client_email,
       mode: 'payment',
       payment_method_options: {
         card: {
           setup_future_usage: 'on_session',
         },
       },
-      saved_payment_method_options: {},
+      shipping_address_collection: {
+        allowed_countries: ['EG'],
+      },
+
       phone_number_collection: {
         enabled: true,
       },
@@ -84,7 +97,8 @@ export class StripeService {
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(` PaymentIntent for ${paymentIntent.amount} succeeded!`);
+        
+        console.log(` PaymentIntent for ${JSON.stringify(paymentIntent)} succeeded!`);
         break;
 
       case 'payment_method.attached':
@@ -117,9 +131,8 @@ export class StripeService {
 
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
-    
 
-    // !! this happen when handle this payment and save in db 
+    // !! this happen when handle this payment and save in db
     // process.nextTick(()=>{
     //   this.handleEvent(event)
     // })

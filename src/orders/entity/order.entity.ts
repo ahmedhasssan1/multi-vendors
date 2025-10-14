@@ -17,10 +17,6 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Cart, (cart) => cart.id, { onDelete: 'CASCADE' })
-  @Field(() => Int)
-  cart_id: Cart;
-
   @Field()
   @Column({ length: 20 })
   order_status: string;

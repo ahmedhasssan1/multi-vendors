@@ -13,7 +13,6 @@ export class OrderItem {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id: number;
-
   
   @Column()
   @Field(() => Int)
@@ -26,7 +25,7 @@ export class OrderItem {
 
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2 })
-  purchase_price: string;
+  purchase_price: number;
 
   @Field(() => Int)
   @Column({ type: 'int' })
