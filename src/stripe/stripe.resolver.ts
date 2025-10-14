@@ -31,35 +31,4 @@ export class StripeResolver {
   async sessionStatus(@Args('sessionId') session: string) {
     return await this.stripeService.sessiondata(session);
   }
-  // @Mutation(() => Boolean)
-  // async handlePaymentSuccess(
-  //   @Args('paymentId') paymentId: string,
-  //   @Args('amount') amount: number,
-  // ) {
-  //   console.log(
-  //     `Processing payment success for payment ${paymentId} with amount ${amount}`,
-  //   );
-  //   // Your payment processing logic here
-  //   // e.g., update payment record, start fulfillment process, etc.
-  //   return true;
-  // }
-
-  // @Mutation(() => Boolean)
-  // async handleCheckoutComplete(@Args('sessionId') sessionId: string) {
-  //   console.log(`Processing checkout completion for session ${sessionId}`);
-  //   // Retrieve full session details
-  //   const sessionDetails = await this.stripeService.sessiondata(sessionId);
-
-  //   // Your order fulfillment logic here
-  //   // e.g., mark order as paid, send confirmation email, etc.
-  //   return true;
-  // }
-
-  // @Mutation(() => Boolean)
-  // async handleCheckoutExpired(@Args('sessionId') sessionId: string) {
-  //   console.log(`Processing checkout expiration for session ${sessionId}`);
-  //   // Your logic for handling expired checkouts
-  //   // e.g., release inventory, notify customer, etc.
-  //   return true;
-  // }
 }

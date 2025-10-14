@@ -1,16 +1,18 @@
 // stripe.controller.ts
-import { Controller, Post, Req, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { StripeService } from './stripe.service';
 import { Request, Response } from 'express';
-import { Context } from '@nestjs/graphql';
+import { Public } from 'src/auth/guard/jwtGuard';
 
 @Controller('webhook')
 export class StripeController {
   constructor(private readonly stripeService: StripeService) {}
 
+  @Public()
   @Post('/')
-  @HttpCode(HttpStatus.OK)
-  async handleWebhook(@Context() ctx:{ req: Request,res: Response}) {
-    return this.stripeService.handleSessionStatus(ctx.req, ctx.res);
+  async handleWebhook(@Req() req: Request, @Res() res: Response) {
+    const session = await this.stripeService.handleWebhookEvents(req,res);
+    return session
+    // return res.json(session);
   }
 }

@@ -46,9 +46,7 @@ export class StripeService {
           setup_future_usage: 'on_session',
         },
       },
-      //   saved_payment_method_options: {
-      //     payment_method_remove: 'enabled',
-      //   },
+      saved_payment_method_options: {},
       phone_number_collection: {
         enabled: true,
       },
@@ -60,114 +58,70 @@ export class StripeService {
     return session;
   }
 
- // In your StripeService class
- async handleSessionStatus(req: Request, res: Response) {
-  const signature = req.headers['stripe-signature'];
-  let event;
+  // In your StripeService class
+  async handleWebhookEvents(req: Request, res: Response) {
+    const signature = req.headers['stripe-signature'];
+    let event;
 
-  try {
-    // req.body is a Buffer when using raw parser
-    event = this.stripe.webhooks.constructEvent(
-      req.body,
-      signature as string,
-      this.webhookSecret,
-    );
-  } catch (err) {
-    console.log(`⚠️  Webhook signature verification failed.`, err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        req.body,
+        signature as string,
+        this.webhookSecret,
+      );
+    } catch (err) {
+      console.error(`⚠️ Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
-  const graphqlEndpoint = `http://localhost:3000/graphql`;
-
-  try {
-    // Handle the event
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`);
-        
-        // Call GraphQL endpoint for payment_intent.succeeded
-        await fetch(graphqlEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              mutation HandlePaymentSuccess($paymentId: String!, $amount: Float!) {
-                handlePaymentSuccess(paymentId: $paymentId, amount: $amount)
-              }
-            `,
-            variables: {
-              paymentId: paymentIntent.id,
-              amount: paymentIntent.amount / 100,
-            }
-          })
-        });
-        break;
-        
       case 'checkout.session.completed':
-        const session = event.data.object;
-        console.log('Received checkout.session.completed for session:', session.id);
-        
-        // Call GraphQL endpoint for checkout.session.completed
-        await fetch(graphqlEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              mutation HandleCheckoutComplete($sessionId: String!) {
-                handleCheckoutComplete(sessionId: $sessionId)
-              }
-            `,
-            variables: {
-              sessionId: session.id,
-            }
-          })
-        });
+        console.log(' Received checkout.sessson.completed');
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log(`Session ID: ${session.id}`);
+        break;
+
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        console.log(` PaymentIntent for ${paymentIntent.amount} succeeded!`);
         break;
 
       case 'payment_method.attached':
-        const paymentMethod = event.data.object;
-        console.log('Payment method attached:', paymentMethod.id);
+        const paymentMethod = event.data.object as Stripe.PaymentMethod;
+        console.log(` Payment method attached: ${paymentMethod.id}`);
         break;
-        
+
       case 'checkout.session.expired':
-        const expiredSession = event.data.object;
-        console.log(`Checkout session expired: ${expiredSession.id}`);
-        
-        // Call GraphQL endpoint for checkout.session.expired
-        await fetch(graphqlEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query: `
-              mutation HandleCheckoutExpired($sessionId: String!) {
-                handleCheckoutExpired(sessionId: $sessionId)
-              }
-            `,
-            variables: {
-              sessionId: expiredSession.id,
-            }
-          })
-        });
+        const expiredSession = event.data.object as Stripe.Checkout.Session;
+        console.log(` Checkout session expired: ${expiredSession.id}`);
+        break;
+
+      case 'charge.succeeded':
+        const chargeSuccess = event.data.object as Stripe.Charge;
+        console.log(`charge success:${chargeSuccess.id} `);
+        break;
+      case 'charge.updated':
+        const chargeUpdated = event.data.object as Stripe.Charge;
+        console.log(` Charge updated: ${chargeUpdated.id}`);
+        break;
+
+      case 'payment_intent.created':
+        const paymentCreated = event.data.object as Stripe.PaymentIntent;
+        console.log(` PaymentIntent created: ${paymentCreated.id}`);
         break;
 
       default:
-        console.log(`Unhandled event type ${event.type}.`);
+        console.log(` Unhandled event type: ${event.type}`);
     }
 
-    // Return a 200 response to acknowledge receipt of the event
+    //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
-  } catch (error) {
-    console.error('Error processing webhook or calling GraphQL:', error);
-    // Still return 200 to Stripe to prevent retries if it's our internal error
-    res.status(200).send({ received: true, error: error.message });
   }
-}
   async sessiondata(sessionId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['payment_intent'],
     });
-    console.log("deb=ug ",session)
+    console.log('deb=ug ', session);
     const payment_intent = session.payment_intent as Stripe.PaymentIntent;
     if (!payment_intent || payment_intent.latest_charge) {
       return {
