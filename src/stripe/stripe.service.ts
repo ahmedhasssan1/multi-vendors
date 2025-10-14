@@ -40,6 +40,7 @@ export class StripeService {
         },
         quantity: item.quantity,
       })),
+      customer_email:cart.client_email,
       mode: 'payment',
       payment_method_options: {
         card: {
@@ -116,6 +117,12 @@ export class StripeService {
 
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
+    
+
+    // !! this happen when handle this payment and save in db 
+    // process.nextTick(()=>{
+    //   this.handleEvent(event)
+    // })
   }
   async sessiondata(sessionId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {

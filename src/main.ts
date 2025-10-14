@@ -10,12 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   const port = process.env.PORT;
 
-
-
-  // Correctly configure the webhook endpoint with raw body parser
   app.use('/webhook', raw({ type: 'application/json' }));
 
-  // Configure parsers for other routes
   app.use(urlencoded({ extended: true }));
   app.use(json());
   app.use(cookieParser());
