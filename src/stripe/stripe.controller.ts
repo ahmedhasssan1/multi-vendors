@@ -13,6 +13,5 @@ export class StripeController {
   async handleWebhook(@Req() req: Request, @Res() res: Response) {
     const session = await this.stripeService.handleWebhookEvents(req,res);
     return session
-    // return res.json(session);
   }
 }

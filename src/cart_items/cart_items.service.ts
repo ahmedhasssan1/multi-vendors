@@ -209,6 +209,7 @@ export class CartItemsService {
     }
     
     const total_price = cart.total_price;
-    return { total_price, cartItems };
+    const client_email=cart.client.email
+    return { total_price, cartItems,client_email };
   }
 }

@@ -13,7 +13,7 @@ export class Cart {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id: number;
-
+  
   @ManyToOne(() => Client, (c) => c.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'client_id' })
   @Field(() => Client)

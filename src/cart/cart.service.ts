@@ -28,6 +28,7 @@ export class CartService {
       where: {
         client: { id },
       },
+      relations: ['client'],
     });
     if (!cart) {
       throw new NotFoundException('this client does not have cart');
