@@ -214,4 +214,15 @@ export class CartItemsService {
     
     return { total_price, cartItems,client_email };
   }
+  async getClientItemsById(id:number):Promise<CartItem[]>{
+    const cartItems=await this.cartItemRepo.find({
+      where:{
+        cart:{client:{id}}
+      },relations:["product"]
+    })
+    if(cartItems.length<1){
+      throw new NotFoundException("no cart items exist")
+    }
+    return cartItems
+  }
 }

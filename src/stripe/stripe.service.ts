@@ -11,8 +11,9 @@ import { CartItemsService } from 'src/cart_items/cart_items.service';
 import * as dotenv from 'dotenv';
 import { NoUnusedFragmentsRule } from 'graphql';
 import { OrdersService } from 'src/orders/orders.service';
+import { json } from 'body-parser';
+import { promiseHooks } from 'v8';
 
-export let sessionID;
 @Injectable()
 export class StripeService {
   private stripe: Stripe;
@@ -54,9 +55,10 @@ export class StripeService {
       },
       shipping_address_collection: {
         allowed_countries: ['EG'],
+        
       },
       metadata: {
-        client_id: cart.client_email,
+        client_email: cart.client_email,
       },
 
       phone_number_collection: {
@@ -91,14 +93,40 @@ export class StripeService {
         console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
 
-        console.log(`Session ID: ${session.id}`);
+        console.log(`Session ID : ${session.id}`);
         break;
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
+        if (!paymentIntent.latest_charge) {
+          console.warn('No charge found for this payment intent');
+          break;
+        }
 
-        await this.OrderServive.createOrderFromCart(paymentIntent);
+        // Retrieve the full charge info (where email & phone exist)
+        const charge = await this.stripe.charges.retrieve(
+          paymentIntent.latest_charge as string,
+        );
+
+        const email =
+          charge.billing_details?.email ?? paymentIntent.receipt_email as string?? null;
+        const phone =
+          charge.billing_details?.phone ??
+          paymentIntent.shipping?.phone ??
+          null;
+        const name =
+          charge.billing_details?.name ?? paymentIntent.shipping?.name ?? null;
+          console.log("phone",charge)
+          try{
+            await this.OrderServive.createOrderFromCart(paymentIntent,email );
+            console.log('order palced ');
+            
+          }catch(err){
+            console.log("somethig wrong with this orderservice",err.message)
+          }
+          console.log('debugging ',email as string);
+          
         break;
 
       case 'payment_method.attached':

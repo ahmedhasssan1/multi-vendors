@@ -29,7 +29,7 @@ export class Order {
   client?: Client;
 
   @Field(() => Float)
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   total_amount: number;
 
   @Field()
