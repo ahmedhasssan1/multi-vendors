@@ -12,12 +12,7 @@ import * as dotenv from 'dotenv';
 import { NoUnusedFragmentsRule } from 'graphql';
 import { OrdersService } from 'src/orders/orders.service';
 
-const payload = {
-  order_staus: String,
-  total: Number,
-  shipping_addres: String,
-  payment_method: String,
-};
+export let sessionID;
 @Injectable()
 export class StripeService {
   private stripe: Stripe;
@@ -25,7 +20,7 @@ export class StripeService {
   constructor(
     private ConfigService: ConfigService,
     private CartItemService: CartItemsService,
-    private OrderServive:OrdersService
+    private OrderServive: OrdersService,
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
@@ -60,6 +55,9 @@ export class StripeService {
       shipping_address_collection: {
         allowed_countries: ['EG'],
       },
+      metadata: {
+        client_id: cart.client_email,
+      },
 
       phone_number_collection: {
         enabled: true,
@@ -75,6 +73,7 @@ export class StripeService {
   // In your StripeService class
   async handleWebhookEvents(req: Request, res: Response) {
     const signature = req.headers['stripe-signature'];
+
     let event;
 
     try {
@@ -87,18 +86,19 @@ export class StripeService {
       console.error(`⚠️ Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-
     switch (event.type) {
       case 'checkout.session.completed':
         console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
+
         console.log(`Session ID: ${session.id}`);
         break;
 
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        
-        console.log(` PaymentIntent for ${JSON.stringify(paymentIntent)} succeeded!`);
+
+
+        await this.OrderServive.createOrderFromCart(paymentIntent);
         break;
 
       case 'payment_method.attached':
@@ -133,6 +133,7 @@ export class StripeService {
     res.status(200).send({ received: true });
 
     // !! this happen when handle this payment and save in db
+
     // process.nextTick(()=>{
     //   this.handleEvent(event)
     // })
