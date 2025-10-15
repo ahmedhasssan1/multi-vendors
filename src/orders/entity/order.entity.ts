@@ -1,43 +1,74 @@
-import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
-import { Cart } from 'src/cart/entity/cart.entity';
-import { OrderItem } from 'src/order_items/entity/order_item.entity';
+import { ObjectType, Field, Float, ID } from '@nestjs/graphql';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
+  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
 } from 'typeorm';
+import { Client } from 'src/clients/entity/client.entity';
 
 @ObjectType()
 @Entity('orders')
 export class Order {
-  @Field(() => Int)
+  @Field(() => ID)
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field()
-  @Column({ length: 20 })
-  order_status: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  stripe_payment_intent_id?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  stripe_checkout_session_id?: string; 
+
+  @Field(() => Client, { nullable: true })
+  @ManyToOne(() => Client, (client) => client.id)
+  client?: Client;
 
   @Field(() => Float)
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  total: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  total_amount: number;
 
   @Field()
-  @Column({ length: 255 })
-  shipping_address: string;
+  @Column({ default: 'PENDING' })
+  status:
+    | 'PENDING'
+    | 'PROCESSING'
+    | 'SHIPPED'
+    | 'DELIVERED'
+    | 'CANCELLED'
+    | 'PAID';
+
+  // Stripe shipping info
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  customer_name?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  address_line1?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  city?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  country?: string;
+
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  phone?: string;
 
   @Field()
-  @Column({ length: 50 })
-  payment_method: string;
-
-  @Field()
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   created_at: Date;
 
   @Field()
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn()
   updated_at: Date;
 }

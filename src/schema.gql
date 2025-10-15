@@ -77,6 +77,22 @@ type CartItem {
   updated_at: DateTime!
 }
 
+type Order {
+  id: ID!
+  stripe_payment_intent_id: String
+  stripe_checkout_session_id: String
+  client: Client
+  total_amount: Float!
+  status: String!
+  customer_name: String
+  address_line1: String
+  city: String
+  country: String
+  phone: String
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type SessionStatusResult {
   charge_id: String
   status: String

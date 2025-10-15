@@ -14,9 +14,9 @@ export class OrderItem {
   @PrimaryGeneratedColumn()
   id: number;
   
-  @Column()
-  @Field(() => Int)
-  order_id: number;
+  @ManyToOne(()=>Order,(order)=>order.id,{onDelete:'CASCADE'})
+  @Field(() => Order)
+  order: Order;
 
   @ManyToOne(() => Product, (p) => p.id, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'product_id' })
