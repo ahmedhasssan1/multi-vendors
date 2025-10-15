@@ -48,14 +48,16 @@ export class StripeService {
       })),
       customer_email: cart.client_email,
       mode: 'payment',
-      payment_method_options: {
-        card: {
-          setup_future_usage: 'on_session',
-        },
+      payment_intent_data: {
+        setup_future_usage: 'on_session',
       },
+      // payment_method_options: {
+      //   card: {
+      //     setup_future_usage: 'on_session',
+      //   },
+      // },
       shipping_address_collection: {
         allowed_countries: ['EG'],
-        
       },
       metadata: {
         client_email: cart.client_email,
@@ -72,7 +74,6 @@ export class StripeService {
     return session;
   }
 
-  // In your StripeService class
   async handleWebhookEvents(req: Request, res: Response) {
     const signature = req.headers['stripe-signature'];
 
@@ -108,30 +109,33 @@ export class StripeService {
         const charge = await this.stripe.charges.retrieve(
           paymentIntent.latest_charge as string,
         );
-
+        console.log('debugging phone', charge.billing_details.phone);
+        const phone = charge.billing_details.phone;
+        console.log('phonee', phone);
         const email =
-          charge.billing_details?.email ?? paymentIntent.receipt_email as string?? null;
-        const phone =
-          charge.billing_details?.phone ??
-          paymentIntent.shipping?.phone ??
+          charge.billing_details?.email ??
+          (paymentIntent.receipt_email as string) ??
           null;
+        //phone does not handle
         const name =
           charge.billing_details?.name ?? paymentIntent.shipping?.name ?? null;
-          console.log("phone",charge)
-          try{
-            await this.OrderServive.createOrderFromCart(paymentIntent,email );
-            console.log('order palced ');
-            
-          }catch(err){
-            console.log("somethig wrong with this orderservice",err.message)
-          }
-          console.log('debugging ',email as string);
-          
+        try {
+          await this.OrderServive.createOrderFromCart(paymentIntent, email);
+          console.log('order palced ');
+        } catch (err) {
+          console.log('somethig wrong with this orderservice', err.message);
+        }
+
         break;
 
       case 'payment_method.attached':
         const paymentMethod = event.data.object as Stripe.PaymentMethod;
         console.log(` Payment method attached: ${paymentMethod.id}`);
+        break;
+
+      case 'charge.refunded':
+        const chargeRefund = event.data.object;
+        console.log('refund phase ');
         break;
 
       case 'checkout.session.expired':
@@ -166,11 +170,16 @@ export class StripeService {
     //   this.handleEvent(event)
     // })
   }
+  async refund(payment_intentId: string) {
+    const refund = await this.stripe.refunds.create({
+      payment_intent: payment_intentId,
+    });
+    return `refund done: ${refund.amount} `;
+  }
   async sessiondata(sessionId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['payment_intent'],
     });
-    console.log('deb=ug ', session);
     const payment_intent = session.payment_intent as Stripe.PaymentIntent;
     if (!payment_intent || payment_intent.latest_charge) {
       return {

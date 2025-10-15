@@ -31,4 +31,8 @@ export class StripeResolver {
   async sessionStatus(@Args('sessionId') session: string) {
     return await this.stripeService.sessiondata(session);
   }
+  @Mutation(()=>String)
+  async refund(@Args("payment_intent_id")payment_intent:string){
+    return await this.stripeService.refund(payment_intent)
+  }
 }

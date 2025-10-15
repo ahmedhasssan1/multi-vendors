@@ -132,6 +132,7 @@ type Mutation {
   createSuperAdmin(superAdminInput: superAdmindto!): SuperAdmin!
   validateVendor(vendorId: Float!): Vendor!
   checkout: CheckoutResponse!
+  refund(payment_intent_id: String!): String!
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
   deleteCartItem(cartItemData: Float!): String!
