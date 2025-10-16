@@ -9,6 +9,7 @@ export class bullmqService {
   constructor(@InjectQueue('email_queue') private readonly emailQueue: Queue) {}
 
   async handleEmailSending() {
+    await
     this.logger.log('⏳ Adding email job to queue...');
 
     try {

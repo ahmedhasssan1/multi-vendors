@@ -1,13 +1,16 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { EmailService } from 'src/email/email.service';
 
 @Processor('email_queue')
 export class bullmqProccessor extends WorkerHost {
   private readonly logger = new Logger(bullmqProccessor.name);
   private isRunning = false;
 
-  constructor() {
+  constructor(
+    private emailService:EmailService
+  ) {
     super();
   }
 
@@ -22,6 +25,7 @@ export class bullmqProccessor extends WorkerHost {
 
     try {
       if (job.name === 'send-email') {
+    
         this.logger.log(' email Executed Successfully!');
       }
     } catch (error) {
