@@ -8,16 +8,18 @@ export class bullmqService {
 
   constructor(@InjectQueue('email_queue') private readonly emailQueue: Queue) {}
 
-  async handleEmailSending() {
-    await
-    this.logger.log('⏳ Adding email job to queue...');
+  async handleEmailSending(recipient: string, orderId: string) {
+    await this.logger.log('Adding email job to queue...');
 
     try {
+
       await this.emailQueue.add(
         'send-email',
-        {delay:3000},
-        
-        { removeOnComplete: true, removeOnFail: 100 },
+        {
+          recipient,
+          orderId,
+        },
+        { removeOnComplete: true, removeOnFail: 100, delay: 3000 },
       );
       this.logger.log('email job added to BullMQ queue successfully!');
     } catch (error) {

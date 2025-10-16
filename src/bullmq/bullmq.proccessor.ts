@@ -8,13 +8,13 @@ export class bullmqProccessor extends WorkerHost {
   private readonly logger = new Logger(bullmqProccessor.name);
   private isRunning = false;
 
-  constructor(
-    private emailService:EmailService
-  ) {
+  constructor(private emailService: EmailService) {
     super();
   }
 
-  async process(job: Job<any>): Promise<void> {
+  async process(
+    job: Job<{ orderId: string; recipient: string }>,
+  ): Promise<void> {
     if (this.isRunning) {
       this.logger.warn(`Skipping ${job.name} — previous job still running.`);
       return;
@@ -24,14 +24,21 @@ export class bullmqProccessor extends WorkerHost {
     this.logger.log(`Job started: ${job.name}`);
 
     try {
-      if (job.name === 'send-email') {
-    
-        this.logger.log(' email Executed Successfully!');
+      if (job.name == 'send-email') {
+        const { recipient, orderId } = job.data;
+
+        if (!recipient) {
+          this.logger.error('Recipient is missing!');
+          return;
+        }
+
+        await this.emailService.sendEmail({ orderId, recipient });
+        this.logger.log(' Email executed successfully!');
       }
     } catch (error) {
       this.logger.error(`Job failed: ${job.name}`, error.stack);
     } finally {
-      this.isRunning = false; // Always unlock the job processor
+      this.isRunning = false;
     }
   }
 }

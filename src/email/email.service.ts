@@ -1,45 +1,42 @@
-import { Injectable, Options } from '@nestjs/common';
-import * as nodemailer from 'nodemailer'
-import {ConfigService} from '@nestjs/config'
+import { Injectable } from '@nestjs/common';
+import * as nodemailer from 'nodemailer';
+import { ConfigService } from '@nestjs/config';
 import { Sendemaildto } from './dto/email.dto';
 
 @Injectable()
 export class EmailService {
-    constructor(private readonly ConfigService:ConfigService){}
+  constructor(private readonly configService: ConfigService) {}
 
+  private emailTransport() {
+    return nodemailer.createTransport({
+      host: this.configService.get<string>('EmailHost'),
+      port: this.configService.get<number>('emailPort'),
+      secure: false,
+      auth: {
+        user: this.configService.get<string>('emailUser'),
+        pass: this.configService.get<string>('emailPassword'),
+      },
+    });
+  }
 
-   emailTransport(){
-         const transporter=nodemailer.createTransport({
-             host: this.ConfigService.get<string>('EmailHost'),
-             port: this.ConfigService.get<number>('emailPort'),
-             secure: false,
-             auth:{ 
-                user: this.ConfigService.get<string>('emailUser'),
-                pass:this.ConfigService.get<string>('emailPassword') ,
-             }
+  async sendEmail(emailDto: Sendemaildto) {
+    const { recipient, orderId } = emailDto;
+    const transporter = this.emailTransport();
 
-            })
-            return transporter;
-   }
-   async SendEmail(EmailDto:Sendemaildto){
-    const {recipienst,subject,html,text}=EmailDto
-    const transport=this.emailTransport();
-    const Options:nodemailer.SendMailOptions={
-        from:this.ConfigService.get<string>('emailUser'),
-        to:recipienst   ,
-        subject:subject,
-        html:html,
-        text:text
-        
+    const mailOptions: nodemailer.SendMailOptions = {
+      from: this.configService.get<string>('emailUser'),
+      to: recipient,
+      subject: 'Your order confirmation',
+      html: `<h1>Thank you for your order!</h1><p>Your order ID is <strong>${orderId}</strong>.</p>`,
+      text: `Thank you for your order! Your order ID is ${orderId}.`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      return 'Email sent successfully';
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error('Failed to send email');
     }
-    try{
-        await transport.sendMail(Options)
-        return 'Email sent successfully';
-    }catch(error){
-        console.log('errot sending email',error)
-
-    }
-   }
-
-
+  }
 }

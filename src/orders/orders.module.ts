@@ -7,12 +7,13 @@ import { CartItemsModule } from 'src/cart_items/cart_items.module';
 import { StripeModule } from 'src/stripe/stripe.module';
 import { ClientsModule } from 'src/clients/clients.module';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
+import { BullmqModule } from 'src/bullmq/bullmq.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Order, OrderItem]),
     CartItemsModule,
-    // forwardRef(() => StripeModule),
+    BullmqModule,
     ClientsModule,
   ],
   providers: [OrdersResolver, OrdersService],

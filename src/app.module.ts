@@ -38,7 +38,7 @@ import { EmailModule } from './email/email.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    BullModule.forRoot("main_queue",{
+    BullModule.forRoot("main_queue2",{
       connection:{
          host:process.env.REDIS_HOST,
          port:6379

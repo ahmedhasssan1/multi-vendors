@@ -109,9 +109,7 @@ export class StripeService {
         const charge = await this.stripe.charges.retrieve(
           paymentIntent.latest_charge as string,
         );
-        console.log('debugging phone', charge.billing_details.phone);
-        const phone = charge.billing_details.phone;
-        console.log('phonee', phone);
+         const phone = charge.billing_details.phone;
         const email =
           charge.billing_details?.email ??
           (paymentIntent.receipt_email as string) ??
@@ -164,7 +162,6 @@ export class StripeService {
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
 
-    // !! this happen when handle this payment and save in db
 
     // process.nextTick(()=>{
     //   this.handleEvent(event)
