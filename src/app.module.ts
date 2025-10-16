@@ -23,6 +23,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RedisModule } from './redis/redis.module';
 import { JwtGuard } from './auth/guard/jwtGuard';
 import { APP_GUARD } from '@nestjs/core';
+import { BullModule } from '@nestjs/bullmq';
+import { BullmqModule } from './bullmq/bullmq.module';
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -34,6 +36,12 @@ import { APP_GUARD } from '@nestjs/core';
     }),
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    BullModule.forRoot("main_queue",{
+      connection:{
+         host:process.env.REDIS_HOST,
+         port:6379
+      }
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -59,6 +67,7 @@ import { APP_GUARD } from '@nestjs/core';
     OrdersModule,
     OrderItemsModule,
     RedisModule,
+    BullmqModule,
   ],
   controllers: [AppController],
   providers: [
