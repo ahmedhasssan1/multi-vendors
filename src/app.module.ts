@@ -25,6 +25,7 @@ import { JwtGuard } from './auth/guard/jwtGuard';
 import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { BullmqModule } from './bullmq/bullmq.module';
+import { EmailModule } from './email/email.module';
 @Module({
   imports: [
     GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -68,6 +69,7 @@ import { BullmqModule } from './bullmq/bullmq.module';
     OrderItemsModule,
     RedisModule,
     BullmqModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { delay, Queue } from 'bullmq';
 
 @Injectable()
 export class bullmqService {
@@ -14,7 +14,8 @@ export class bullmqService {
     try {
       await this.emailQueue.add(
         'send-email',
-        {},
+        {delay:3000},
+        
         { removeOnComplete: true, removeOnFail: 100 },
       );
       this.logger.log('email job added to BullMQ queue successfully!');
