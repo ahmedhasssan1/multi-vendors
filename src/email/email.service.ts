@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { Sendemaildto } from './dto/email.dto';
+import { stringify } from 'querystring';
 
 @Injectable()
 export class EmailService {
@@ -38,5 +39,27 @@ export class EmailService {
       console.error('Error sending email:', error);
       throw new Error('Failed to send email');
     }
+   
+  }
+   async sendVendorEmail(email:string) {
+    
+    const transporter = this.emailTransport();
+
+    const mailOptions: nodemailer.SendMailOptions = {
+      from: this.configService.get<string>('emailUser'),
+      to: email,
+      subject: 'Your order confirmation',
+      html: `thanks`,
+      text: `have a good day .`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      return 'Email sent successfully';
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw new Error('Failed to send email');
+    }
+   
   }
 }

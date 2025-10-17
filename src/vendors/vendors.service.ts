@@ -9,11 +9,13 @@ import { Vendor } from './entity/vendors.entity';
 import { Repository } from 'typeorm';
 import { ClientDto } from 'src/users/dto/client.dto';
 import { throws } from 'assert';
+import { bullmqService } from 'src/bullmq/bullmq.service';
 
 @Injectable()
 export class VendorsService {
   constructor(
     @InjectRepository(Vendor) private vendorRepo: Repository<Vendor>,
+    private bullmqService: bullmqService,
   ) {}
 
   async vendorVerfied(vendorId: number): Promise<Vendor> {
@@ -43,8 +45,13 @@ export class VendorsService {
     if (!vendor_exist) {
       throw new NotFoundException('this vendor does not exist');
     }
-    vendor_exist.status = 'verified';
-    return await this.vendorRepo.save(vendor_exist);
+    if (vendor_exist.status == 'pending') {
+      vendor_exist.status = 'verified';
+      await this.bullmqService.handleVendor(vendor_exist.email);
+      return await this.vendorRepo.save(vendor_exist);
+    }
+    await this.bullmqService.handleVendor(vendor_exist.email);
+    return vendor_exist;
   }
   async findVendorById(id: number): Promise<Vendor> {
     const vendor = await this.vendorRepo.findOne({ where: { id } });
@@ -67,10 +74,9 @@ export class VendorsService {
   }
   async findVendorByUserId(id: number): Promise<Vendor> {
     const vendor = await this.vendorRepo.findOne({ where: { user: { id } } });
-    if(!vendor){
-      throw new NotFoundException("this vendor with this user id not exist")
+    if (!vendor) {
+      throw new NotFoundException('this vendor with this user id not exist');
     }
     return vendor;
   }
-
 }

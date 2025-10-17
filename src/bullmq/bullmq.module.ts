@@ -1,18 +1,26 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { bullmqProccessor } from './bullmq.proccessor';
-import { bullmqService } from './bullmq.service';
 import { EmailModule } from 'src/email/email.module';
+import { bullmqService } from './bullmq.service';
+import { emailVendor } from './processors/validation.proccessor';
+// import { ValidateVendorProcessor } from './processors/validation.proccessor';
 
 @Module({
-  imports:[
-    BullModule.registerQueue({
-      name:"email_queue",
-      configKey:"main_queue2"
-    }),
-    EmailModule
+  imports: [
+    BullModule.registerQueue(
+      {
+        name: 'email_queue',
+        configKey: 'main_queue',
+      },
+      {
+        name: 'handle_vendor',
+        configKey: 'main_queue',
+      },
+    ),
+    EmailModule,
   ],
-  providers: [bullmqProccessor, bullmqService],
-  exports:[bullmqService]
+  providers: [bullmqProccessor, bullmqService, emailVendor],
+  exports: [bullmqService],
 })
 export class BullmqModule {}
