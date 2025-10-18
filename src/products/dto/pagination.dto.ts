@@ -1,5 +1,5 @@
 import { Field, InputType, Int } from "@nestjs/graphql";
-import { IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 @InputType()
 export class PaginationDto{
@@ -11,5 +11,6 @@ export class PaginationDto{
 
     @Field()
     @IsString()
+    @IsOptional()
     category?:string
 }

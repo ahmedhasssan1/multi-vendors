@@ -47,14 +47,6 @@ type SuperAdmin {
   updated_at: DateTime!
 }
 
-type Cart {
-  id: Int!
-  client: Client!
-  total_price: Float!
-  created_at: DateTime!
-  updated_at: DateTime!
-}
-
 type Product {
   id: Int!
   name: String!
@@ -64,6 +56,15 @@ type Product {
   rating: Float
   price: Float!
   stock_quantity: Int!
+  created_at: DateTime!
+  updated_at: DateTime!
+  vendor: Vendor!
+}
+
+type Cart {
+  id: Int!
+  client: Client!
+  total_price: Float!
   created_at: DateTime!
   updated_at: DateTime!
 }

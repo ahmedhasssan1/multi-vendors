@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vendor } from './entity/vendors.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ClientDto } from 'src/users/dto/client.dto';
 import { throws } from 'assert';
 import { bullmqService } from 'src/bullmq/bullmq.service';
@@ -78,5 +78,8 @@ export class VendorsService {
       throw new NotFoundException('this vendor with this user id not exist');
     }
     return vendor;
+  }
+  async findByIds(ids: number[]): Promise<Vendor[]> {
+    return this.vendorRepo.findBy({ id: In(ids) });
   }
 }

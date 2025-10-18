@@ -26,23 +26,33 @@ import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { BullmqModule } from './bullmq/bullmq.module';
 import { EmailModule } from './email/email.module';
+import { createVendorLoader } from './vendors/dataloader/vensorsProducts';
+import { VendorsService } from './vendors/vendors.service';
 @Module({
   imports: [
-    GraphQLModule.forRoot<ApolloDriverConfig>({
+    GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-      context: ({ req, res }) => ({ req, res }),
-      graphiql: true,
-      playground: false,
+      imports:[VendorsModule],
+      inject: [VendorsService],
+      useFactory: (vendorsService: VendorsService) => ({
+        autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+        playground: false, // Apollo Playground disabled
+        graphiql: true, // or true if you’re using GraphiQL
+        context: ({ req, res }) => ({
+          req,
+          res,
+          vendorLoader: createVendorLoader(vendorsService), // ✅ Proper service instance
+        }),
+      }),
     }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    BullModule.forRoot("main_queue",{
-      connection:{
-         host:process.env.REDIS_HOST,
-         port:6379
-      }
+    BullModule.forRoot('main_queue', {
+      connection: {
+        host: process.env.REDIS_HOST,
+        port: 6379,
+      },
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
