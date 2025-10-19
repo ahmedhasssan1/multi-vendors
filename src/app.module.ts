@@ -30,6 +30,7 @@ import { DataSource } from 'typeorm';
 import { ProductsService } from './products/products.service';
 // import { genrevendorLoader } from './loaders/vensorsProducts';
 // import { createVendorLoader } from './products/dataloader/vensorsProducts';
+import { ReviewsModule } from './reviews/reviews.module';
 import { DataloaderModule } from './dataloader/dataloader.module';
 import { DataloaderService } from './dataloader/dataloader.service';
 // import { createVendorLoader } from './products/dataloader/vensorsProducts';
@@ -87,6 +88,7 @@ import { DataloaderService } from './dataloader/dataloader.service';
     BullmqModule,
     EmailModule,
     DataloaderModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

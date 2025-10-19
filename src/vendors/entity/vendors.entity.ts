@@ -1,5 +1,6 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
 import { Product } from 'src/products/entity/products.entity';
+import { Review } from 'src/reviews/entity/reviews.entity';
 import { User } from 'src/users/entity/user.entity';
 import {
   Entity,
@@ -40,9 +41,11 @@ export class Vendor {
   @Column({ default: 'pending' })
   status: string;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() =>Int, { nullable: true },)
   @Column({ type: 'int', nullable: true })
   rating: number;
+
+  
 
   @OneToMany(()=>Product,(Product)=>Product.vendor,{onDelete:"SET NULL"})
   @Field(()=>[Product],{nullable:true})

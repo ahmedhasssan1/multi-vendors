@@ -114,6 +114,16 @@ type Followers {
   updated_at: DateTime!
 }
 
+type Review {
+  id: Int!
+  content: String!
+  rating: Float!
+  vendor: Vendor!
+  vendor_id: Int!
+  Client: Client!
+  client_id: Int!
+}
+
 type Query {
   hello: String!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
@@ -141,6 +151,7 @@ type Mutation {
   deleteCartItem(cartItemData: Float!): String!
   followVendor(followInput: FollowVendorDto!): Followers!
   unfollow(unfollwInfo: Float!): String!
+  createReview(reviewInput: ReviewDto!): Review!
 }
 
 input ProductDto {
@@ -182,4 +193,11 @@ input QuantityDto {
 
 input FollowVendorDto {
   vendor_id: Float!
+}
+
+input ReviewDto {
+  content: String!
+  rating: Float!
+  client_id: Int!
+  vendor_id: Int!
 }
