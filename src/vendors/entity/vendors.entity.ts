@@ -1,4 +1,5 @@
 import { ObjectType, Field, Int } from '@nestjs/graphql';
+import { Product } from 'src/products/entity/products.entity';
 import { User } from 'src/users/entity/user.entity';
 import {
   Entity,
@@ -9,6 +10,7 @@ import {
   ManyToMany,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 @ObjectType()
@@ -42,9 +44,9 @@ export class Vendor {
   @Column({ type: 'int', nullable: true })
   rating: number;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  products: number;
+  @OneToMany(()=>Product,(Product)=>Product.vendor,{onDelete:"SET NULL"})
+  @Field(()=>[Product],{nullable:true})
+  products: Product[];
 
   @Field()
   @Column({ default: 0 })

@@ -1,20 +1,29 @@
-import { Context, Parent, ResolveField, Resolver } from '@nestjs/graphql';
-import { Product } from 'src/products/entity/products.entity';
+import { Context, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { VendorsService } from './vendors.service';
 import { Vendor } from './entity/vendors.entity';
+import { Product } from 'src/products/entity/products.entity';
+import { IDataloaders } from 'src/dataloader/loaders/dataloader.interface';
+import { ProductsService } from 'src/products/products.service';
+import { query } from 'express';
 
-@Resolver(() => Product)
+@Resolver(Vendor)
 export class VendorsResolver {
-  constructor(private readonly vendorsService: VendorsService) {}
+  constructor(private readonly vendorsService: VendorsService,
+  ) {}
 
-  @ResolveField(() => Vendor)
-  async vendor(
-    @Parent() product: Product,
-    @Context('vendorLoader')
-    vendorLoader: ReturnType<
-      typeof import('./dataloader/vensorsProducts').createVendorLoader
-    >,
+   @Query(()=>[Vendor])
+   async vendors(){
+    return  await this.vendorsService.getAllVendors() || null
+   }
+  
+  @ResolveField('products', () => [Product])
+  getProductss(
+    @Parent() vendor: Vendor,
+    @Context() { loaders }: { loaders: IDataloaders },
   ) {
-    return vendorLoader.load(product.vendor_id);
+    const { id: vendorId } = vendor;
+
+    // Use the ProductLoader DataLoader
+    return loaders.ProductLoader.load(vendorId)
   }
 }

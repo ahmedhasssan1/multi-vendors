@@ -82,4 +82,7 @@ export class VendorsService {
   async findByIds(ids: number[]): Promise<Vendor[]> {
     return this.vendorRepo.findBy({ id: In(ids) });
   }
+  async getAllVendors(){
+    return await this.vendorRepo.find()
+  }
 }

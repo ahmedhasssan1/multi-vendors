@@ -26,6 +26,20 @@ type Client {
   updated_at: DateTime!
 }
 
+type Product {
+  id: Int!
+  name: String!
+  vendor: Vendor!
+  vendor_id: Int!
+  category: String!
+  description: String!
+  rating: Float
+  price: Float!
+  stock_quantity: Int!
+  created_at: DateTime!
+  updated_at: DateTime!
+}
+
 type Vendor {
   id: Int!
   name: String!
@@ -33,7 +47,7 @@ type Vendor {
   user: User!
   status: String!
   rating: Int
-  products: Float
+  products: [Product!]!
   folowers_count: Float!
   created_at: DateTime!
   updated_at: DateTime!
@@ -45,20 +59,6 @@ type SuperAdmin {
   email: String!
   created_at: DateTime!
   updated_at: DateTime!
-}
-
-type Product {
-  id: Int!
-  name: String!
-  vendor_id: Int!
-  category: String!
-  description: String!
-  rating: Float
-  price: Float!
-  stock_quantity: Int!
-  created_at: DateTime!
-  updated_at: DateTime!
-  vendor: Vendor!
 }
 
 type Cart {
@@ -116,8 +116,9 @@ type Followers {
 
 type Query {
   hello: String!
-  sessionStatus(sessionId: String!): SessionStatusResult!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
+  vendors: [Vendor!]!
+  sessionStatus(sessionId: String!): SessionStatusResult!
 }
 
 input PaginationDto {
@@ -127,6 +128,7 @@ input PaginationDto {
 }
 
 type Mutation {
+  createProduct(ProductInput: ProductDto!): Product!
   login(userData: UserLoginDto!): String!
   logout: String!
   signup(userInfo: UserDto!): User!
@@ -137,9 +139,17 @@ type Mutation {
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
   deleteCartItem(cartItemData: Float!): String!
-  createProduct(ProductInput: ProductDto!): Product!
   followVendor(followInput: FollowVendorDto!): Followers!
   unfollow(unfollwInfo: Float!): String!
+}
+
+input ProductDto {
+  name: String!
+  vendor_id: Float!
+  description: String!
+  category: String!
+  price: Float!
+  quantity: Float!
 }
 
 input UserLoginDto {
@@ -168,15 +178,6 @@ input CartItemDto {
 input QuantityDto {
   quantity: Float!
   product_id: Float!
-}
-
-input ProductDto {
-  name: String!
-  vendor_id: Float!
-  description: String!
-  category: String!
-  price: Float!
-  quantity: Float!
 }
 
 input FollowVendorDto {

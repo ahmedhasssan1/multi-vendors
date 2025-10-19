@@ -1,26 +1,37 @@
 import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
 import { Vendor } from 'src/vendors/entity/vendors.entity';
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  ManyToOne, JoinColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  ManyToMany,
 } from 'typeorm';
 
 @ObjectType()
 @Entity('products')
-export class Product {
+export  class Product {
   @Field(() => Int)
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field(()=>String)
+  @Field(() => String)
   @Column()
-  name:string
+  name: string;
 
-  @Column()
+  @ManyToOne(() => Vendor, (vendor) => vendor.products, { onDelete: 'CASCADE' })
+  @Field(() => Vendor)
+  @JoinColumn()
+  vendor: Vendor;
+
   @Field(() => Int)
+  @Column({nullable:true})
   vendor_id: number;
 
-  @Field((  )=>String)
+  @Field(() => String)
   @Column({ length: 50 })
   category: string;
 
@@ -29,7 +40,7 @@ export class Product {
   description: string;
 
   @Field(() => Float, { nullable: true })
-  @Column({ type: 'int', default:0 })
+  @Column({ type: 'int', default: 0 })
   rating: number;
 
   @Field(() => Float)
@@ -47,7 +58,4 @@ export class Product {
   @Field()
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
-
-
-
 }

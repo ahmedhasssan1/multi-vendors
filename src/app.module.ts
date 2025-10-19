@@ -26,22 +26,27 @@ import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { BullmqModule } from './bullmq/bullmq.module';
 import { EmailModule } from './email/email.module';
-import { createVendorLoader } from './vendors/dataloader/vensorsProducts';
-import { VendorsService } from './vendors/vendors.service';
+import { DataSource } from 'typeorm';
+import { ProductsService } from './products/products.service';
+// import { genrevendorLoader } from './loaders/vensorsProducts';
+// import { createVendorLoader } from './products/dataloader/vensorsProducts';
+import { DataloaderModule } from './dataloader/dataloader.module';
+import { DataloaderService } from './dataloader/dataloader.service';
+// import { createVendorLoader } from './products/dataloader/vensorsProducts';
 @Module({
   imports: [
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
-      imports:[VendorsModule],
-      inject: [VendorsService],
-      useFactory: (vendorsService: VendorsService) => ({
+      imports: [DataloaderModule],
+      inject: [DataloaderService],
+      useFactory: (dataloaderService:DataloaderService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
-        playground: false, // Apollo Playground disabled
-        graphiql: true, // or true if you’re using GraphiQL
+        playground: false,
+        graphiql: true,
         context: ({ req, res }) => ({
           req,
           res,
-          vendorLoader: createVendorLoader(vendorsService), // ✅ Proper service instance
+          loaders:dataloaderService.getLoaders()
         }),
       }),
     }),
@@ -63,6 +68,7 @@ import { VendorsService } from './vendors/vendors.service';
       database: process.env.DATABASE,
       autoLoadEntities: true,
       synchronize: true,
+      logging: ['query', 'error'],
     }),
     AuthModule,
     StripeModule,
@@ -80,6 +86,7 @@ import { VendorsService } from './vendors/vendors.service';
     RedisModule,
     BullmqModule,
     EmailModule,
+    DataloaderModule,
   ],
   controllers: [AppController],
   providers: [
