@@ -39,7 +39,7 @@ export class ProductsService {
       where: { name: productInput.name },
       relations: ['vendor'],
     });
-    const vendorExist= await this.vendorVerfied(productInput.vendor_id);
+    const vendorExist = await this.vendorVerfied(productInput.vendor_id);
     if (
       product &&
       product.vendor &&
@@ -54,7 +54,7 @@ export class ProductsService {
       ...productInput,
       stock_quantity: productInput.quantity,
       vendor_id: productInput.vendor_id,
-      vendor:vendorExist
+      vendor: vendorExist,
     });
     return await this.ProductRepo.save(new_product);
   }
@@ -120,18 +120,15 @@ export class ProductsService {
   public async getvendorsProductsBatch(
     vendorsIds: readonly number[],
   ): Promise<(Product | any)[]> {
+      console.log('Batching vendor IDs:', vendorsIds);
+
     const products = await this.getAllProductsByVendorIds(vendorsIds);
     const mappedRes = await this._mapResultToIds(vendorsIds, products);
-    return mappedRes
+    return mappedRes;
   }
-  private _mapResultToIds(  
-    vendorIds: readonly number[],
-    products: Product[],
-  ): Product[][] {
-    const result = vendorIds.map(
-      (id) => products.filter((prod) => prod.vendor_id === id) || null,
+  private _mapResultToIds(vendorIds: readonly number[], products: Product[]) {
+    return vendorIds.map(
+      (id) => products.filter((prod: Product) => prod.vendor_id === id) || null,
     );
-
-    return result;
   }
 }

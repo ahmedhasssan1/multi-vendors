@@ -1,4 +1,10 @@
-import { Context, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
+import {
+  Context,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver,
+} from '@nestjs/graphql';
 import { VendorsService } from './vendors.service';
 import { Vendor } from './entity/vendors.entity';
 import { Product } from 'src/products/entity/products.entity';
@@ -8,22 +14,20 @@ import { query } from 'express';
 
 @Resolver(Vendor)
 export class VendorsResolver {
-  constructor(private readonly vendorsService: VendorsService,
-  ) {}
+  constructor(private readonly vendorsService: VendorsService) {}
 
-   @Query(()=>[Vendor])
-   async vendors(){
-    return  await this.vendorsService.getAllVendors() || null
-   }
-  
+  @Query(() => [Vendor])
+  async vendors() {
+    return await this.vendorsService.getAllVendors();
+  }
+
   @ResolveField('products', () => [Product])
   getProductss(
     @Parent() vendor: Vendor,
     @Context() { loaders }: { loaders: IDataloaders },
   ) {
-    const { id: vendorId } = vendor;
 
     // Use the ProductLoader DataLoader
-    return loaders.ProductLoader.load(vendorId)
+    return loaders.ProductLoader.load(vendor.id);
   }
 }

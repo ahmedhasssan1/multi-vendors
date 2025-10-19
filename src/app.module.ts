@@ -38,7 +38,6 @@ import { DataloaderService } from './dataloader/dataloader.service';
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       imports: [DataloaderModule],
-      inject: [DataloaderService],
       useFactory: (dataloaderService:DataloaderService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         playground: false,
@@ -49,6 +48,7 @@ import { DataloaderService } from './dataloader/dataloader.service';
           loaders:dataloaderService.getLoaders()
         }),
       }),
+      inject: [DataloaderService],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -68,7 +68,7 @@ import { DataloaderService } from './dataloader/dataloader.service';
       database: process.env.DATABASE,
       autoLoadEntities: true,
       synchronize: true,
-      logging: ['query', 'error'],
+      logging: ['query', ],
     }),
     AuthModule,
     StripeModule,
