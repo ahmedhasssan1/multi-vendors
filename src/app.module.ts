@@ -70,7 +70,7 @@ import { DataloaderService } from './dataloader/dataloader.service';
       database: process.env.DATABASE,
       autoLoadEntities: true,
       synchronize: true,
-      logging: ['query', ],
+      // logging: ['query', ],
     }),
     AuthModule,
     StripeModule,

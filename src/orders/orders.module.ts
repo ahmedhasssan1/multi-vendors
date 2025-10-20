@@ -8,6 +8,7 @@ import { StripeModule } from 'src/stripe/stripe.module';
 import { ClientsModule } from 'src/clients/clients.module';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
 import { BullmqModule } from 'src/bullmq/bullmq.module';
+import { ProductsModule } from 'src/products/products.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { BullmqModule } from 'src/bullmq/bullmq.module';
     CartItemsModule,
     BullmqModule,
     ClientsModule,
+    ProductsModule
   ],
   providers: [OrdersResolver, OrdersService],
   exports: [OrdersService],

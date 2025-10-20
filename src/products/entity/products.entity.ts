@@ -51,6 +51,10 @@ export  class Product {
   @Column({ type: 'int', default: 0 })
   stock_quantity: number;
 
+  @Field(()=>Int,{nullable:true})
+  @Column({type:"int"})
+  number_of_purchases:number
+
   @Field()
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;

@@ -109,20 +109,13 @@ export class StripeService {
         const charge = await this.stripe.charges.retrieve(
           paymentIntent.latest_charge as string,
         );
-         const phone = charge.billing_details.phone;
         const email =
           charge.billing_details?.email ??
-          (paymentIntent.receipt_email as string) ??
-          null;
+          (paymentIntent.receipt_email as string);
         //phone does not handle
-        const name =
-          charge.billing_details?.name ?? paymentIntent.shipping?.name ?? null;
-        try {
-          await this.OrderServive.createOrderFromCart(paymentIntent, email);
-          console.log('order palced ');
-        } catch (err) {
-          console.log('somethig wrong with this orderservice', err.message);
-        }
+
+        console.log('order palced ');
+        await this.OrderServive.createOrderFromCart(paymentIntent, email);
 
         break;
 
@@ -161,7 +154,6 @@ export class StripeService {
 
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
-
 
     // process.nextTick(()=>{
     //   this.handleEvent(event)

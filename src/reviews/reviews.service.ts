@@ -57,9 +57,10 @@ export class ReviewsService {
   async getVendorsReviewsBatch(
     vendorsIds: readonly number[],
   ): Promise<(Review | any)[]> {
-    const reviews = await this.getReviewByVendorsIds(vendorsIds);
-    const result = await this._mapResultToIds(vendorsIds, reviews);
-    return result;
+      console.log("get venro review",vendorsIds)
+      const reviews = await this.getReviewByVendorsIds(vendorsIds);
+      const result = await this._mapResultToIds(vendorsIds, reviews);
+      return result;
   }
   private _mapResultToIds(vendorsIds: readonly number[], reviews: Review[]) {
     return vendorsIds.map(

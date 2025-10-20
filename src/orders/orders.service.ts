@@ -12,6 +12,7 @@ import { StripeService } from 'src/stripe/stripe.service';
 import { ClientsService } from 'src/clients/clients.service';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
 import { bullmqService } from 'src/bullmq/bullmq.service';
+import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class OrdersService {
@@ -22,6 +23,7 @@ export class OrdersService {
     // private stripeService: StripeService,
     private clientService: ClientsService,
     private BullmqService: bullmqService,
+    private productService: ProductsService,
   ) {}
 
   // order.service.ts
@@ -54,8 +56,15 @@ export class OrdersService {
       }),
     );
 
+    for (const item of cartItems) {
+    
+      item.product.number_of_purchases += item.quantity;
+      console.log('debugging purchasses', item.product.number_of_purchases);
+
+      await this.productService.saveProduct(item.product);
+    }
     await this.OrderItemRepo.save(cartItem);
-    // Optionally clear the cart after payment
+    //  clear the cart after payment
 
     console.log('debugging s=orderServie');
     await this.BullmqService.handleEmailSending(

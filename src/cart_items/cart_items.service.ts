@@ -187,14 +187,14 @@ export class CartItemsService {
     await this.cartService.saveCart(cart);
     return 'the product deleted from cart';
   }
-  async getclientCartItems(req: Request ) {
+  async getclientCartItems(req: Request) {
     const token = req?.cookies.access_token;
     if (!token) {
       throw new NotFoundException('nottoken provided please login in');
     }
     const decode = await this.decode(token);
 
-    const client = await this.clientService.findClientByUserId(decode.sub );
+    const client = await this.clientService.findClientByUserId(decode.sub);
     if (!client) {
       throw new NotFoundException('this client not exist');
     }
@@ -202,27 +202,29 @@ export class CartItemsService {
     const cartItems = await this.cartItemRepo.find({
       where: {
         cart: { id: cart.id },
-      },relations:["product"]
+      },
+      relations: ['product'],
     });
     if (cartItems.length < 1) {
       throw new NotFoundException('no producted added');
     }
-    
+
     const total_price = cart.total_price;
-    const client_email=cart.client.email
-    console.log('debugging ',client_email);
-    
-    return { total_price, cartItems,client_email };
+    const client_email = cart.client.email;
+    console.log('debugging ', client_email);
+
+    return { total_price, cartItems, client_email };
   }
-  async getClientItemsById(id:number):Promise<CartItem[]>{
-    const cartItems=await this.cartItemRepo.find({
-      where:{
-        cart:{client:{id}}
-      },relations:["product"]
-    })
-    if(cartItems.length<1){
-      throw new NotFoundException("no cart items exist")
+  async getClientItemsById(id: number): Promise<CartItem[]> {
+    const cartItems = await this.cartItemRepo.find({
+      where: {
+        cart: { client: { id } },
+      },
+      relations: ['product'],
+    });
+    if (cartItems.length < 1) {
+      throw new NotFoundException('no cart items exist');
     }
-    return cartItems
+    return cartItems;
   }
 }

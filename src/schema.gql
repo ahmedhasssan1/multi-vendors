@@ -36,6 +36,7 @@ type Product {
   rating: Float
   price: Float!
   stock_quantity: Int!
+  number_of_purchases: Int
   created_at: DateTime!
   updated_at: DateTime!
 }

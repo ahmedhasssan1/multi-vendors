@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cart } from './entity/cart.entity';
 import { Repository } from 'typeorm';
-import { Client } from 'src/clients/entity/client.entity';
 @Injectable()
 export class CartService {
   constructor(@InjectRepository(Cart) private CartRepo: Repository<Cart>) {}
