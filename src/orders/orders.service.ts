@@ -13,6 +13,7 @@ import { ClientsService } from 'src/clients/clients.service';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
 import { bullmqService } from 'src/bullmq/bullmq.service';
 import { ProductsService } from 'src/products/products.service';
+import { VendorsService } from 'src/vendors/vendors.service';
 
 @Injectable()
 export class OrdersService {
@@ -20,10 +21,10 @@ export class OrdersService {
     @InjectRepository(Order) private OrderRepo: Repository<Order>,
     @InjectRepository(OrderItem) private OrderItemRepo: Repository<OrderItem>,
     private cartItemsService: CartItemsService,
-    // private stripeService: StripeService,
     private clientService: ClientsService,
     private BullmqService: bullmqService,
     private productService: ProductsService,
+    private vendoeService: VendorsService,
   ) {}
 
   // order.service.ts
@@ -57,12 +58,13 @@ export class OrdersService {
     );
 
     for (const item of cartItems) {
-    
+      const vendor = await this.vendoeService.findVendorById(item.product.vendor_id);
+      vendor.number_of_purchases++;
+      await this.vendoeService.saveVendor(vendor);
       item.product.number_of_purchases += item.quantity;
-      console.log('debugging purchasses', item.product.number_of_purchases);
-
       await this.productService.saveProduct(item.product);
     }
+
     await this.OrderItemRepo.save(cartItem);
     //  clear the cart after payment
 

@@ -41,22 +41,27 @@ export class Vendor {
   @Column({ default: 'pending' })
   status: string;
 
-  @Field(() =>Int, { nullable: true },)
+  @Field(() => Int, { nullable: true })
   @Column({ type: 'int', nullable: true })
   rating: number;
 
-  @OneToMany(()=>Review,(review)=>review.vendor,{onDelete:"SET NULL"})
-  @Field(()=>[Review],{nullable:true})
-  reviews:Review[]
-  
+  @OneToMany(() => Review, (review) => review.vendor, { onDelete: 'SET NULL' })
+  @Field(() => [Review], { nullable: true })
+  reviews: Review[];
 
-  @OneToMany(()=>Product,(Product)=>Product.vendor,{onDelete:"SET NULL"})
-  @Field(()=>[Product],{nullable:true})
+  @OneToMany(() => Product, (Product) => Product.vendor, {
+    onDelete: 'SET NULL',
+  })
+  @Field(() => [Product], { nullable: true })
   products: Product[];
 
   @Field()
   @Column({ default: 0 })
   folowers_count: number;
+
+  @Field(() => Int, { nullable: true })
+  @Column({ type: 'int' })
+  number_of_purchases: number;
 
   @Field()
   @CreateDateColumn({ type: 'timestamp' })

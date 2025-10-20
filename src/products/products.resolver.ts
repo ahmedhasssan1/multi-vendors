@@ -26,6 +26,9 @@ export class ProductsResolver {
   async getAllProducts(@Args('paginationInput') pagination: PaginationDto) {
     return await this.productsService.getAllProducts(pagination);
   }
-
+  @Query(()=>[Product])
+  async getMostPurchasesProduct(){
+    return await this.productsService.mostPopularProducts();
+  }
   
 }

@@ -9,6 +9,7 @@ import { ClientsModule } from 'src/clients/clients.module';
 import { OrderItem } from 'src/order_items/entity/order_item.entity';
 import { BullmqModule } from 'src/bullmq/bullmq.module';
 import { ProductsModule } from 'src/products/products.module';
+import { VendorsModule } from 'src/vendors/vendors.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { ProductsModule } from 'src/products/products.module';
     CartItemsModule,
     BullmqModule,
     ClientsModule,
-    ProductsModule
+    ProductsModule,
+    VendorsModule
   ],
   providers: [OrdersResolver, OrdersService],
   exports: [OrdersService],

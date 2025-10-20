@@ -61,6 +61,7 @@ type Vendor {
   reviews: [Review!]!
   products: [Product!]!
   folowers_count: Float!
+  number_of_purchases: Int
   created_at: DateTime!
   updated_at: DateTime!
 }
@@ -129,6 +130,7 @@ type Followers {
 type Query {
   hello: String!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
+  getMostPurchasesProduct: [Product!]!
   vendors: [Vendor!]!
   getAllreviews: [Review!]!
   sessionStatus(sessionId: String!): SessionStatusResult!

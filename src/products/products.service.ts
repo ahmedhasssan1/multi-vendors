@@ -131,4 +131,9 @@ export class ProductsService {
       (id) => products.filter((prod: Product) => prod.vendor_id === id) || null,
     );
   }
+  async mostPopularProducts():Promise<Product[]>{
+    const most_popular_product=await this.ProductRepo.createQueryBuilder('product').
+    select("product").orderBy("product.number_of_purchases","DESC").getMany()
+    return most_popular_product
+  }
 }
