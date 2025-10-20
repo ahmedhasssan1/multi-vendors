@@ -40,6 +40,16 @@ type Product {
   updated_at: DateTime!
 }
 
+type Review {
+  id: Int!
+  content: String!
+  rating: Float!
+  vendor: Vendor
+  vendor_id: Int!
+  Client: Client!
+  client_id: Int!
+}
+
 type Vendor {
   id: Int!
   name: String!
@@ -47,6 +57,7 @@ type Vendor {
   user: User!
   status: String!
   rating: Int
+  reviews: [Review!]!
   products: [Product!]!
   folowers_count: Float!
   created_at: DateTime!
@@ -114,20 +125,11 @@ type Followers {
   updated_at: DateTime!
 }
 
-type Review {
-  id: Int!
-  content: String!
-  rating: Float!
-  vendor: Vendor!
-  vendor_id: Int!
-  Client: Client!
-  client_id: Int!
-}
-
 type Query {
   hello: String!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
   vendors: [Vendor!]!
+  getAllreviews: [Review!]!
   sessionStatus(sessionId: String!): SessionStatusResult!
 }
 
@@ -139,6 +141,7 @@ input PaginationDto {
 
 type Mutation {
   createProduct(ProductInput: ProductDto!): Product!
+  createReview(reviewInput: ReviewDto!): Review!
   login(userData: UserLoginDto!): String!
   logout: String!
   signup(userInfo: UserDto!): User!
@@ -151,7 +154,6 @@ type Mutation {
   deleteCartItem(cartItemData: Float!): String!
   followVendor(followInput: FollowVendorDto!): Followers!
   unfollow(unfollwInfo: Float!): String!
-  createReview(reviewInput: ReviewDto!): Review!
 }
 
 input ProductDto {
@@ -161,6 +163,13 @@ input ProductDto {
   category: String!
   price: Float!
   quantity: Float!
+}
+
+input ReviewDto {
+  content: String!
+  rating: Float!
+  client_id: Int!
+  vendor_id: Int!
 }
 
 input UserLoginDto {
@@ -193,11 +202,4 @@ input QuantityDto {
 
 input FollowVendorDto {
   vendor_id: Float!
-}
-
-input ReviewDto {
-  content: String!
-  rating: Float!
-  client_id: Int!
-  vendor_id: Int!
 }

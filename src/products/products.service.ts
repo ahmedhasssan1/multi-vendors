@@ -120,7 +120,7 @@ export class ProductsService {
   public async getvendorsProductsBatch(
     vendorsIds: readonly number[],
   ): Promise<(Product | any)[]> {
-      console.log('Batching vendor IDs:', vendorsIds);
+    console.log('Batching vendor IDs:', vendorsIds);
 
     const products = await this.getAllProductsByVendorIds(vendorsIds);
     const mappedRes = await this._mapResultToIds(vendorsIds, products);

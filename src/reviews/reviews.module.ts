@@ -9,5 +9,6 @@ import { ClientsModule } from 'src/clients/clients.module';
 @Module({
   imports:[TypeOrmModule.forFeature([Review]),VendorsModule,ClientsModule],
   providers: [ReviewsResolver, ReviewsService],
+  exports:[ReviewsService]
 })
 export class ReviewsModule {}

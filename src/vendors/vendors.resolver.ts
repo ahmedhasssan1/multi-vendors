@@ -8,9 +8,10 @@ import {
 import { VendorsService } from './vendors.service';
 import { Vendor } from './entity/vendors.entity';
 import { Product } from 'src/products/entity/products.entity';
-import { IDataloaders } from 'src/dataloader/loaders/dataloader.interface';
+import { IDataloaders, ReviewLoaders } from 'src/dataloader/loaders/dataloader.interface';
 import { ProductsService } from 'src/products/products.service';
 import { query } from 'express';
+import { Review } from 'src/reviews/entity/reviews.entity';
 
 @Resolver(Vendor)
 export class VendorsResolver {
@@ -30,4 +31,14 @@ export class VendorsResolver {
     // Use the ProductLoader DataLoader
     return loaders.ProductLoader.load(vendor.id);
   }
+
+  @ResolveField("reviews",()=>[Review])
+  getReviews(
+    @Parent() vendor:Vendor,
+    @Context() {reviewLoader}:{reviewLoader:ReviewLoaders},
+  ){
+    return reviewLoader.reviewLoader.load(vendor.id)
+  }
+
+
 }

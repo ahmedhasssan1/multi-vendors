@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Review } from './entity/reviews.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ReviewDto } from './dto/createReview,dto';
 import { VendorsService } from 'src/vendors/vendors.service';
 import { ClientsService } from 'src/clients/clients.service';
@@ -47,4 +47,28 @@ export class ReviewsService {
 
     return parseFloat(result.avg) || 0;
   }
+  async getReviewByVendorsIds(vendorIds: readonly number[]): Promise<Review[]> {
+    return await this.ReviewsRepo.find({
+      where: {
+        vendor_id: In(vendorIds),
+      },
+    });
+  }
+  async getVendorsReviewsBatch(
+    vendorsIds: readonly number[],
+  ): Promise<(Review | any)[]> {
+    const reviews = await this.getReviewByVendorsIds(vendorsIds);
+    const result = await this._mapResultToIds(vendorsIds, reviews);
+    return result;
+  }
+  private _mapResultToIds(vendorsIds: readonly number[], reviews: Review[]) {
+    return vendorsIds.map(
+      (id) =>reviews.filter((review: Review) => review.vendor_id === id) || null,
+    );
+
+  }
+  async getAllReviews():Promise<Review[]>{
+    return await this.ReviewsRepo.find()
+  }
+  
 }

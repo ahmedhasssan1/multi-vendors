@@ -22,8 +22,8 @@ export class Review {
   @Column({type:"float"})
   rating: number;
 
-  @ManyToOne(() => Vendor, (vendor) => vendor.id, { onDelete: 'CASCADE' })
-  @Field(() => Vendor)
+  @ManyToOne(() => Vendor, (vendor) => vendor.reviews, { onDelete: 'CASCADE' })
+  @Field(() => Vendor,{nullable:true})
   vendor: Vendor;
 
   @Field(()=>Int)

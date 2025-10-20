@@ -46,7 +46,8 @@ import { DataloaderService } from './dataloader/dataloader.service';
         context: ({ req, res }) => ({
           req,
           res,
-          loaders:dataloaderService.getLoaders()
+          loaders:dataloaderService.getLoaders(),
+          reviewLoader:dataloaderService.getReviewLoaders()
         }),
       }),
       inject: [DataloaderService],

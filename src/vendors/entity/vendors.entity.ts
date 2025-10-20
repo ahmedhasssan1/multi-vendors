@@ -45,6 +45,9 @@ export class Vendor {
   @Column({ type: 'int', nullable: true })
   rating: number;
 
+  @OneToMany(()=>Review,(review)=>review.vendor,{onDelete:"SET NULL"})
+  @Field(()=>[Review],{nullable:true})
+  reviews:Review[]
   
 
   @OneToMany(()=>Product,(Product)=>Product.vendor,{onDelete:"SET NULL"})
