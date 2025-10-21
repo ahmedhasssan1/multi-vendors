@@ -14,9 +14,9 @@ export class Comment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  @Field(()=>Int)
-  author: number;
+  @ManyToOne(()=>Client,(cleint)=>cleint.id,{onDelete:"CASCADE"})
+  @Field(()=>Client)
+  author: Client;
 
   @ManyToOne(() => Product, (p) => p.id, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_id' })

@@ -17,7 +17,7 @@ export class VendorsService {
     @InjectRepository(Vendor) private vendorRepo: Repository<Vendor>,
     private bullmqService: bullmqService,
   ) {}
-
+   
   async vendorVerfied(vendorId: number): Promise<Vendor> {
     const vendor_exist = await this.vendorRepo.findOne({
       where: { id: vendorId },

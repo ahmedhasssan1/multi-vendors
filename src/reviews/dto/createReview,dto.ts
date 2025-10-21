@@ -1,5 +1,6 @@
 import { Field, Float, InputType, Int } from '@nestjs/graphql';
 import { IsString } from 'class-validator';
+import { Request } from 'express';
 
 @InputType()
 export class ReviewDto {
@@ -7,13 +8,11 @@ export class ReviewDto {
   @IsString()
   content: string;
 
-  @Field(()=>Float)
-  rating:number
+  @Field(() => Float)
+  rating: number;
 
-  @Field(()=>Int)
-  client_id:number
+ 
 
-  @Field(()=>Int)
-  vendor_id:number
-
+  @Field(() => Int)
+  vendor_id: number;
 }

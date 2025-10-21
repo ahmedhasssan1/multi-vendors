@@ -4,9 +4,12 @@ import { VendorsResolver } from './vendors.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vendor } from './entity/vendors.entity';
 import { BullmqModule } from 'src/bullmq/bullmq.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vendor]), BullmqModule],
+  imports: [TypeOrmModule.forFeature([Vendor]), BullmqModule,
+ 
+],
   providers: [VendorsResolver, VendorsService],
   exports: [VendorsService],
 })
