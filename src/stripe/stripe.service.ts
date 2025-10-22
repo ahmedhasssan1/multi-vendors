@@ -95,12 +95,15 @@ export class StripeService {
         console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
         // Access phone number directly from session if available
-        const paymentIntent2=session.payment_intent ;
-        const phoneNumber = session.customer_details?.phone || null;
-        const email=session.customer_details?.email as string
-        console.log(`Phone ffrom session create: ${phoneNumber}`);
-         
-        await this.OrderServive.createOrderFromCart(paymentIntent2, email,phoneNumber as string );
+        const paymentIntent2 = session.payment_intent;
+        const phoneNumber = session.customer_details?.phone as string;
+        const email = session.customer_details?.email as string;
+
+        await this.OrderServive.createOrderFromCart(
+          paymentIntent2,
+          email,
+          phoneNumber ,
+        );
         console.log('order palced ');
         break;
 
