@@ -28,19 +28,21 @@ export class OrdersService {
   ) {}
 
   // order.service.ts
-  async createOrderFromCart(paymentIntent: any, email: string) {
+  async createOrderFromCart(paymentIntent: any, email: string,phone:string) {
     const client = await this.clientService.findUserByEmail(email);
     if (!client) {
       throw new NotFoundException('mo client with this id');
     }
 
     const cartItems = await this.cartItemsService.getClientItemsById(client.id);
-
+    console.log('debugging pgone dfrom service',phone);
+    
     const order = this.OrderRepo.create({
       stripe_payment_intent_id: paymentIntent.id,
       total_amount: paymentIntent.amount,
       status: 'PAID',
-      client: client,
+      client: client, 
+      phone:phone,
       customer_name: paymentIntent.shipping?.name,
       address_line1: paymentIntent.shipping?.address?.line1,
       city: paymentIntent.shipping?.address?.city,

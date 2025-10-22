@@ -13,6 +13,7 @@ import { NoUnusedFragmentsRule } from 'graphql';
 import { OrdersService } from 'src/orders/orders.service';
 import { json } from 'body-parser';
 import { promiseHooks } from 'v8';
+import { eventNames } from 'process';
 
 @Injectable()
 export class StripeService {
@@ -46,6 +47,7 @@ export class StripeService {
         },
         quantity: item.quantity,
       })),
+      expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
       payment_intent_data: {
@@ -66,8 +68,7 @@ export class StripeService {
       phone_number_collection: {
         enabled: true,
       },
-      success_url:
-        'https://www.istockphoto.com/photo/businessman-using-laptop-to-online-payment-banking-and-online-shopping-financial-gm2078490118-565054317',
+      success_url: 'http://localhost:3000/graphql',
       cancel_url:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR3nENDzdg_967ii1-3TdUbagksG-cmyJCSw&s',
     });
@@ -93,29 +94,20 @@ export class StripeService {
       case 'checkout.session.completed':
         console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
-
-        console.log(`Session ID : ${session.id}`);
+        // Access phone number directly from session if available
+        const paymentIntent2=session.payment_intent ;
+        const phoneNumber = session.customer_details?.phone || null;
+        const email=session.customer_details?.email as string
+        console.log(`Phone ffrom session create: ${phoneNumber}`);
+         
+        await this.OrderServive.createOrderFromCart(paymentIntent2, email,phoneNumber as string );
+        console.log('order palced ');
         break;
 
       case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const paymentIntent = event.data.object;
 
-        if (!paymentIntent.latest_charge) {
-          console.warn('No charge found for this payment intent');
-          break;
-        }
-
-        // Retrieve the full charge info (where email & phone exist)
-        const charge = await this.stripe.charges.retrieve(
-          paymentIntent.latest_charge as string,
-        );
-        const email =
-          charge.billing_details?.email ??
-          (paymentIntent.receipt_email as string);
-        //phone does not handle
-
-        console.log('order palced ');
-        await this.OrderServive.createOrderFromCart(paymentIntent, email);
+        console.log('paymenyt intent successfully ');
 
         break;
 
@@ -136,7 +128,8 @@ export class StripeService {
 
       case 'charge.succeeded':
         const chargeSuccess = event.data.object as Stripe.Charge;
-        console.log(`charge success:${chargeSuccess.id} `);
+        console.log('chargesucess', chargeSuccess);
+
         break;
       case 'charge.updated':
         const chargeUpdated = event.data.object as Stripe.Charge;
@@ -146,6 +139,9 @@ export class StripeService {
       case 'payment_intent.created':
         const paymentCreated = event.data.object as Stripe.PaymentIntent;
         console.log(` PaymentIntent created: ${paymentCreated.id}`);
+        break;
+      case 'stripe.charges.retrieve':
+        console.log('inside stripe.charge');
         break;
 
       default:

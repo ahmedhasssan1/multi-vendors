@@ -102,7 +102,7 @@ type Order {
   address_line1: String
   city: String
   country: String
-  phone: String
+  phone: String!
   created_at: DateTime!
   updated_at: DateTime!
 }

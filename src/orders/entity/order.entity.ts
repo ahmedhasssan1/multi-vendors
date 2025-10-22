@@ -60,7 +60,7 @@ export class Order {
   country?: string;
 
 
-  @Field({ nullable: true })
+  @Field()
   @Column({ nullable: true })
   phone?: string;
 
