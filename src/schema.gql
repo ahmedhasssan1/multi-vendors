@@ -141,6 +141,7 @@ type Query {
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
   getMostPurchasesProduct: [Product!]!
   vendors: [Vendor!]!
+  getMostPopularVendor: [Vendor!]!
   getAllreviews: [Review!]!
   sessionStatus(sessionId: String!): SessionStatusResult!
 }

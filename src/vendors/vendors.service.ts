@@ -10,6 +10,7 @@ import { In, Repository } from 'typeorm';
 import { ClientDto } from 'src/users/dto/client.dto';
 import { throws } from 'assert';
 import { bullmqService } from 'src/bullmq/bullmq.service';
+import { Query } from '@nestjs/graphql';
 
 @Injectable()
 export class VendorsService {
@@ -17,7 +18,7 @@ export class VendorsService {
     @InjectRepository(Vendor) private vendorRepo: Repository<Vendor>,
     private bullmqService: bullmqService,
   ) {}
-   
+
   async vendorVerfied(vendorId: number): Promise<Vendor> {
     const vendor_exist = await this.vendorRepo.findOne({
       where: { id: vendorId },
@@ -84,5 +85,13 @@ export class VendorsService {
   }
   async getAllVendors() {
     return await this.vendorRepo.find();
+  }
+  @Query(()=>[Vendor])
+  async getMostPopularVendor():Promise<Vendor[]> {
+    const popular_vendors = await this.vendorRepo
+      .createQueryBuilder('vendor')
+      .orderBy('vendor.rating * 0.7 +vendor.number_of_purchases*0.3').getMany();
+
+      return popular_vendors;
   }
 }

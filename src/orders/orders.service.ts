@@ -56,7 +56,6 @@ export class OrdersService {
 
     //  clear the cart after payment just leave it as test !!
 
-    console.log('debugging orderServie');
     await this.BullmqService.handleEmailSending(
       client.email,
       String(savedOrder.id),
@@ -73,7 +72,7 @@ export class OrdersService {
         const orderItem = this.OrderItemRepo.create({
           product: item.product,
           quantity: item.quantity,
-          order: order, 
+          order: order,
         });
       }),
     );
@@ -86,6 +85,7 @@ export class OrdersService {
       item.product.number_of_purchases += item.quantity;
       await this.productService.saveProduct(item.product);
     }
+    console.log('debugging orderItemsService');
 
     return await this.OrderItemRepo.save(cartItem);
   }

@@ -40,5 +40,9 @@ export class VendorsResolver {
     return reviewLoader.reviewLoader.load(vendor.id)
   }
 
+  async mostPopularVendor(){
+    return await this.vendorsService.getMostPopularVendor()
+  }
+
 
 }

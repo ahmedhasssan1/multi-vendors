@@ -42,8 +42,8 @@ export class bullmqService {
       this.logger.log('Vendor email job added to queue successfully!');
     } catch (error) {
       this.logger.error(
-        'Failed to add vendor email job to queue!',
-        error.stack,
+        'Failed to add vendor email job to queue!',error.message
+
       );
     }
   }

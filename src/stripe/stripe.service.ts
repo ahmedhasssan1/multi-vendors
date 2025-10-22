@@ -68,7 +68,7 @@ export class StripeService {
       phone_number_collection: {
         enabled: true,
       },
-      success_url: 'http://localhost:3000/graphql',
+      success_url: 'https://www.shutterstock.com/shutterstock/videos/3848004751/thumb/7.jpg?ip=x480',
       cancel_url:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR3nENDzdg_967ii1-3TdUbagksG-cmyJCSw&s',
     });
