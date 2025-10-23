@@ -20,7 +20,7 @@ export class WalletService {
     @InjectRepository(Wallet) private walletRepository: Repository<Wallet>,
     @InjectRepository(Transaction) private transactionRepository: Repository<Transaction>,
     private configService: ConfigService,
-    private orderService: OrdersService, // Replace later with actual service
+    private orderService: OrdersService, 
   ) {
     const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
