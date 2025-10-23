@@ -1,4 +1,5 @@
 import {
+  Args,
   Context,
   Parent,
   Query,
@@ -8,7 +9,10 @@ import {
 import { VendorsService } from './vendors.service';
 import { Vendor } from './entity/vendors.entity';
 import { Product } from 'src/products/entity/products.entity';
-import { IDataloaders, ReviewLoaders } from 'src/dataloader/loaders/dataloader.interface';
+import {
+  IDataloaders,
+  ReviewLoaders,
+} from 'src/dataloader/loaders/dataloader.interface';
 import { ProductsService } from 'src/products/products.service';
 import { query } from 'express';
 import { Review } from 'src/reviews/entity/reviews.entity';
@@ -27,22 +31,25 @@ export class VendorsResolver {
     @Parent() vendor: Vendor,
     @Context() { loaders }: { loaders: IDataloaders },
   ) {
-
     // Use the ProductLoader DataLoader
     return loaders.ProductLoader.load(vendor.id);
   }
 
-  @ResolveField("reviews",()=>[Review])
+  @ResolveField('reviews', () => [Review])
   getReviews(
-    @Parent() vendor:Vendor,
-    @Context() {reviewLoader}:{reviewLoader:ReviewLoaders},
-  ){
-    return reviewLoader.reviewLoader.load(vendor.id)
+    @Parent() vendor: Vendor,
+    @Context() { reviewLoader }: { reviewLoader: ReviewLoaders },
+  ) {
+    return reviewLoader.reviewLoader.load(vendor.id);
   }
 
-  async mostPopularVendor(){
-    return await this.vendorsService.getMostPopularVendor()
+  @Query(() => [Vendor])
+  async mostPopularVendors(
+    @Args('timeframe', { type: () => String, nullable: true })
+    timeframe?: string,
+  ) {
+    return await this.vendorsService.getMostPopularVendors(
+      timeframe as 'day' | 'week' | 'month' | 'year' | undefined,
+    );
   }
-
-
 }

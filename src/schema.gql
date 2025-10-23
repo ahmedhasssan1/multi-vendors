@@ -136,12 +136,50 @@ type Comment {
   updated_at: DateTime!
 }
 
+type Wallet {
+  id: ID!
+  vendor: Vendor!
+  stripeAccountId: String!
+  order: Order!
+  balance: Float!
+  transactions: Transaction!
+  currency: String!
+  pendingBalance: Float!
+  created_at: DateTime!
+  lastUpdated: DateTime!
+}
+
+type Transaction {
+  id: ID!
+  wallet: Wallet!
+  amount: Float!
+  type: TransactionType!
+  status: String!
+  orderId: Float!
+  stripePaymentId: String
+  stripeTransferId: String
+  stripeRefundId: String
+  metadata: String
+  description: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+"""Type of financial transaction"""
+enum TransactionType {
+  SALE
+  PAYOUT
+  REFUND
+  COMMISSION
+  FEE
+}
+
 type Query {
   hello: String!
   getAllProducts(paginationInput: PaginationDto!): [Product!]!
   getMostPurchasesProduct: [Product!]!
   vendors: [Vendor!]!
-  getMostPopularVendor: [Vendor!]!
+  mostPopularVendors(timeframe: String): [Vendor!]!
   getAllreviews: [Review!]!
   sessionStatus(sessionId: String!): SessionStatusResult!
 }

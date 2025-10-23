@@ -98,6 +98,7 @@ export class StripeService {
         const paymentIntent2 = session.payment_intent;
         const phoneNumber = session.customer_details?.phone as string;
         const email = session.customer_details?.email as string;
+     
 
         await this.OrderServive.createOrderFromCart(
           paymentIntent2,
@@ -164,6 +165,52 @@ export class StripeService {
     });
     return `refund done: ${refund.amount} `;
   }
+ 
+
+
+async createVendorAccount(vendorData) {
+  try {
+    // Create a Standard or Express connected account
+    const account = await this.stripe.accounts.create({
+      type: 'standard', 
+      country: vendorData.country,
+      email: vendorData.email,
+      capabilities: {
+        card_payments: {requested: true},
+        transfers: {requested: true},
+      },
+      business_type: vendorData.business_type, // 'individual' or 'company'
+      business_profile: {
+        name: vendorData.business_name,
+        url: vendorData.website,
+      },
+      metadata: {
+        vendor_id: vendorData.vendorId // Store reference to your system's vendor ID
+      }
+    });
+    
+    // For Standard accounts, create an account link for onboarding
+    const accountLink = await this.stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/refresh`,
+      return_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/complete`,
+      type: 'account_onboarding',
+    });
+    
+    return {
+      accountId: account.id,
+      onboardingUrl: accountLink.url
+    };
+  } catch (error) {
+    throw new BadRequestException(`Failed to create vendor account: ${error.message}`);
+  }
+}
+
+
+
+
+
+
   async sessiondata(sessionId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['payment_intent'],
@@ -187,4 +234,6 @@ export class StripeService {
       amount_total: (session.amount_total ?? 0) / 100,
     };
   }
+
+
 }

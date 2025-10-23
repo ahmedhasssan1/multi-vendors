@@ -89,4 +89,13 @@ export class OrdersService {
 
     return await this.OrderItemRepo.save(cartItem);
   }
+  async findById(id:number):Promise<Order>{
+    const order=await this.OrderRepo.findOne({
+      where:{id}
+    })
+    if(!order){
+      throw new NotFoundException("this order not exist ")
+    }
+    return order
+  }
 }

@@ -26,28 +26,30 @@ import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { BullmqModule } from './bullmq/bullmq.module';
 import { EmailModule } from './email/email.module';
-import { DataSource } from 'typeorm';
-import { ProductsService } from './products/products.service';
 // import { genrevendorLoader } from './loaders/vensorsProducts';
 // import { createVendorLoader } from './products/dataloader/vensorsProducts';
+import { TransactionsModule } from './transactions/transactions.module';
+import { WalletModule } from './wallet/wallet.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { DataloaderModule } from './dataloader/dataloader.module';
 import { DataloaderService } from './dataloader/dataloader.service';
+import { Wallet } from './wallet/entity/wallet.entity';
+import { Transaction } from './transactions/entity/transaction.entity';
 // import { createVendorLoader } from './products/dataloader/vensorsProducts';
 @Module({
   imports: [
     GraphQLModule.forRootAsync<ApolloDriverConfig>({
       driver: ApolloDriver,
       imports: [DataloaderModule],
-      useFactory: (dataloaderService:DataloaderService) => ({
+      useFactory: (dataloaderService: DataloaderService) => ({
         autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
         playground: false,
         graphiql: true,
         context: ({ req, res }) => ({
           req,
           res,
-          loaders:dataloaderService.getLoaders(),
-          reviewLoader:dataloaderService.getReviewLoaders()
+          loaders: dataloaderService.getLoaders(),
+          reviewLoader: dataloaderService.getReviewLoaders(),
         }),
       }),
       inject: [DataloaderService],
@@ -70,6 +72,7 @@ import { DataloaderService } from './dataloader/dataloader.service';
       database: process.env.DATABASE,
       autoLoadEntities: true,
       synchronize: true,
+      // entities:[Wallet,Transaction],
       // logging: ['query', ],
     }),
     AuthModule,
@@ -90,6 +93,8 @@ import { DataloaderService } from './dataloader/dataloader.service';
     EmailModule,
     DataloaderModule,
     ReviewsModule,
+    WalletModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [

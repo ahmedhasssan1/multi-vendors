@@ -86,12 +86,55 @@ export class VendorsService {
   async getAllVendors() {
     return await this.vendorRepo.find();
   }
-  @Query(()=>[Vendor])
-  async getMostPopularVendor():Promise<Vendor[]> {
-    const popular_vendors = await this.vendorRepo
-      .createQueryBuilder('vendor')
-      .orderBy('vendor.rating * 0.7 +vendor.number_of_purchases*0.3').getMany();
 
-      return popular_vendors;
+  async getMostPopularVendors(
+    timeframe?: 'day' | 'week' | 'month' | 'year' | { from: Date; to: Date },
+  ) {
+    const query = this.vendorRepo
+      .createQueryBuilder('vendor')
+      .leftJoin('vendor.products', 'product')
+      .addSelect('SUM(product.number_of_purchases)', 'totalPurchases')
+      .groupBy('vendor.id');
+
+    //  Optional timeframe filters
+    if (timeframe) {
+      if (typeof timeframe === 'object') {
+        query.where('vendor.created_at BETWEEN :from AND :to', {
+          from: timeframe.from,
+          to: timeframe.to,
+        });
+      } else {
+        const date = new Date();
+        switch (timeframe) {
+          case 'day':
+            date.setDate(date.getDate() - 1);
+            break;
+          case 'week':
+            date.setDate(date.getDate() - 7);
+            break;
+          case 'month':
+            date.setMonth(date.getMonth() - 1);
+            break;
+          case 'year':
+            date.setFullYear(date.getFullYear() - 1);
+            break;
+        }
+        query.where('vendor.created_at >= :since', { since: date });
+      }
+    }
+
+    query.orderBy(
+      '(vendor.rating * 0.3 + vendor.number_of_purchases * 0.7)',
+      'DESC',
+    );
+
+    const result = await query.getRawAndEntities();
+
+    // Combine entity with computed values
+    return result.entities.map((vendor, i) => ({
+      ...vendor,
+      totalPurchases: Number(result.raw[i].totalPurchases || 0),
+      popularityScore: vendor.rating * 0.7 + vendor.number_of_purchases * 0.3,
+    }));
   }
 }
