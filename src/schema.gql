@@ -107,35 +107,6 @@ type Order {
   updated_at: DateTime!
 }
 
-type SessionStatusResult {
-  charge_id: String
-  status: String
-  customer_email: String
-  amount_total: Float
-}
-
-type CheckoutResponse {
-  session_url: String!
-  session_id: String!
-}
-
-type Followers {
-  id: Float!
-  vendor: Vendor!
-  client: Client!
-  create_at: DateTime!
-  updated_at: DateTime!
-}
-
-type Comment {
-  id: Int!
-  author: Client!
-  product: Product!
-  content: String!
-  created_at: DateTime!
-  updated_at: DateTime!
-}
-
 type Wallet {
   id: ID!
   vendor: Vendor!
@@ -172,6 +143,35 @@ enum TransactionType {
   REFUND
   COMMISSION
   FEE
+}
+
+type SessionStatusResult {
+  charge_id: String
+  status: String
+  customer_email: String
+  amount_total: Float
+}
+
+type CheckoutResponse {
+  session_url: String!
+  session_id: String!
+}
+
+type Followers {
+  id: Float!
+  vendor: Vendor!
+  client: Client!
+  create_at: DateTime!
+  updated_at: DateTime!
+}
+
+type Comment {
+  id: Int!
+  author: Client!
+  product: Product!
+  content: String!
+  created_at: DateTime!
+  updated_at: DateTime!
 }
 
 type Query {

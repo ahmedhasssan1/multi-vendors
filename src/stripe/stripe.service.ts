@@ -14,6 +14,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { json } from 'body-parser';
 import { promiseHooks } from 'v8';
 import { eventNames } from 'process';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Injectable()
 export class StripeService {
@@ -23,6 +24,7 @@ export class StripeService {
     private ConfigService: ConfigService,
     private CartItemService: CartItemsService,
     private OrderServive: OrdersService,
+    private walletService: WalletService,
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
@@ -33,42 +35,49 @@ export class StripeService {
     if (!cart) {
       throw new NotFoundException('no cart exist with this user');
     }
+    const vendorId = cart.cartItems[0].product.vendor_id;
+    const stripeacc = await this.walletService.findOneByVendorId(vendorId);
+    // const platformFeePercent = 0.10;
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: cart.cartItems.map((item) => ({
         price_data: {
-          currency: 'egp',
+          currency: 'USD',
           unit_amount: Math.round(item.product.price * 100),
           product_data: {
             name: item.product.name,
             description: item.product.description,
           },
         },
+
         quantity: item.quantity,
+        
       })),
+
       expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
       payment_intent_data: {
-        setup_future_usage: 'on_session',
+        transfer_data: {
+          destination: stripeacc,
+        },
+        
       },
-      // payment_method_options: {
-      //   card: {
-      //     setup_future_usage: 'on_session',
-      //   },
-      // },
+      
       shipping_address_collection: {
-        allowed_countries: ['EG'],
+        allowed_countries: ["EG"],
       },
       metadata: {
         client_email: cart.client_email,
+        // vendor_account_id: vendorId,
       },
 
       phone_number_collection: {
         enabled: true,
       },
-      success_url: 'https://www.shutterstock.com/shutterstock/videos/3848004751/thumb/7.jpg?ip=x480',
+      success_url:
+        'https://www.shutterstock.com/shutterstock/videos/3848004751/thumb/7.jpg?ip=x480',
       cancel_url:
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR3nENDzdg_967ii1-3TdUbagksG-cmyJCSw&s',
     });
@@ -98,12 +107,11 @@ export class StripeService {
         const paymentIntent2 = session.payment_intent;
         const phoneNumber = session.customer_details?.phone as string;
         const email = session.customer_details?.email as string;
-     
 
         await this.OrderServive.createOrderFromCart(
           paymentIntent2,
           email,
-          phoneNumber ,
+          phoneNumber,
         );
         console.log('order palced ');
         break;
@@ -132,7 +140,10 @@ export class StripeService {
 
       case 'charge.succeeded':
         const chargeSuccess = event.data.object as Stripe.Charge;
-        console.log('chargesucess', chargeSuccess);
+        // if(chargeSuccess.transfer_data?.destination){
+        //   const vendor=await
+        // }
+        console.log('charge sucess', chargeSuccess.transfer_data?.destination);
 
         break;
       case 'charge.updated':
@@ -165,51 +176,46 @@ export class StripeService {
     });
     return `refund done: ${refund.amount} `;
   }
- 
 
+  async createVendorAccount(vendorData) {
+    try {
+      // Create a Standard or Express connected account
+      const account = await this.stripe.accounts.create({
+        type: 'standard',
+        country: vendorData.country,
+        email: vendorData.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: vendorData.business_type, // 'individual' or 'company'
+        business_profile: {
+          name: vendorData.business_name,
+          url: vendorData.website,
+        },
+        metadata: {
+          vendor_id: vendorData.vendorId, // Store reference to your system's vendor ID
+        },
+      });
 
-async createVendorAccount(vendorData) {
-  try {
-    // Create a Standard or Express connected account
-    const account = await this.stripe.accounts.create({
-      type: 'standard', 
-      country: vendorData.country,
-      email: vendorData.email,
-      capabilities: {
-        card_payments: {requested: true},
-        transfers: {requested: true},
-      },
-      business_type: vendorData.business_type, // 'individual' or 'company'
-      business_profile: {
-        name: vendorData.business_name,
-        url: vendorData.website,
-      },
-      metadata: {
-        vendor_id: vendorData.vendorId // Store reference to your system's vendor ID
-      }
-    });
-    
-    // For Standard accounts, create an account link for onboarding
-    const accountLink = await this.stripe.accountLinks.create({
-      account: account.id,
-      refresh_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/refresh`,
-      return_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/complete`,
-      type: 'account_onboarding',
-    });
-    
-    return {
-      accountId: account.id,
-      onboardingUrl: accountLink.url
-    };
-  } catch (error) {
-    throw new BadRequestException(`Failed to create vendor account: ${error.message}`);
+      // For Standard accounts, create an account link for onboarding
+      const accountLink = await this.stripe.accountLinks.create({
+        account: account.id,
+        refresh_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/refresh`,
+        return_url: `${process.env.YOUR_DOMAIN}/vendor/onboarding/complete`,
+        type: 'account_onboarding',
+      });
+
+      return {
+        accountId: account.id,
+        onboardingUrl: accountLink.url,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to create vendor account: ${error.message}`,
+      );
+    }
   }
-}
-
-
-
-
-
 
   async sessiondata(sessionId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
@@ -234,6 +240,4 @@ async createVendorAccount(vendorData) {
       amount_total: (session.amount_total ?? 0) / 100,
     };
   }
-
-
 }

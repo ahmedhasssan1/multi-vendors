@@ -46,16 +46,16 @@ export class WalletService {
     }
     const account = await this.stripe.accounts.create({
       type: 'standard',
-      country: "EG",
+      country: "US",
       email: vendor.email,
       business_type: 'individual',
       capabilities: {
         transfers: { requested: true },
         card_payments:{requested:true}
       },
-      tos_acceptance: {
-        service_agreement: 'recipient',
-      },
+      // tos_acceptance: {
+      //   service_agreement: 'recipient',
+      // },
       metadata: { vendorId: vendorId },
     });
     const checkacc = await this.checkAccountCapabilities(account.id);

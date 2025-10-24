@@ -5,11 +5,12 @@ import { CartItemsModule } from 'src/cart_items/cart_items.module';
 import { StripeController } from './stripe.controller';
 import { OrdersModule } from 'src/orders/orders.module';
 import { OrdersService } from 'src/orders/orders.service';
+import { WalletModule } from 'src/wallet/wallet.module';
 // import { StripeController } from './stripe.controller';
 // import { sessionSataus } from './sessionstatus.controller';
 
 @Module({
-  imports:[CartItemsModule,forwardRef(()=>OrdersModule) ],
+  imports:[CartItemsModule,forwardRef(()=>OrdersModule),WalletModule ],
   controllers:[StripeController],
   providers: [StripeResolver, StripeService],
   exports:[StripeService]
