@@ -138,7 +138,7 @@ export class WalletService {
   }
 
   // Process a sale transaction
-  async processSaleTransaction(
+  async   processSaleTransaction(
     orderId: number,
     vendorId: number,
     amount: number,
@@ -149,7 +149,7 @@ export class WalletService {
 
     // Create the main sale transaction
     const saleTransaction = {
-      walletId: wallet.id,
+      wallet:wallet,
       amount: amount - commission,
       type: TransactionType.SALE,
       status: 'completed',
@@ -177,15 +177,18 @@ export class WalletService {
       updatedAt: new Date(),
     };
 
-    // Save both transactions
+    console.log('debugging  code arrival @@@@@@',commissionTransaction);
+    // Save both transactions 
     const commision = this.transactionRepository.create(commissionTransaction);
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
-
+    
     // Update wallet balance (although we'll rely on Stripe for source of truth)
     wallet.pendingBalance += amount - commission;
-    await this.walletRepository.save(wallet);
+    
+    // await this.walletRepository.save(wallet);
     await this.transactionRepository.save(savedSaleTransaction);
+    console.log('debugging tranasction',savedSaleTransaction);
     return await this.transactionRepository.save(commision);
   }
 
@@ -243,7 +246,7 @@ export class WalletService {
       }
 
       await this.walletRepository.save(wallet);
-
+      
       return savedTransaction;
     } catch (error) {
       throw new BadRequestException(`Payout failed: ${error.message}`);

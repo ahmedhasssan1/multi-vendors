@@ -34,23 +34,25 @@ export class OrdersService {
     if (!client) {
       throw new NotFoundException('mo client with this id');
     }
+    console.log('Saving order with payment intent:', paymentIntent.id || paymentIntent);
 
     const cartItems = await this.cartItemsService.getClientItemsById(client.id);
-    console.log('debugging pgone dfrom service', phone);
-
+    
     const order = this.OrderRepo.create({
       stripe_payment_intent_id: paymentIntent.id,
       total_amount: paymentIntent.amount,
       status: 'PAID',
       client: client,
-      phone: phone,
+      phone,
       customer_name: paymentIntent.shipping?.name,
       address_line1: paymentIntent.shipping?.address?.line1,
       city: paymentIntent.shipping?.address?.city,
       country: paymentIntent.shipping?.address?.country,
     });
-
+    
+    
     const savedOrder = await this.OrderRepo.save(order);
+    console.log('Saved order:', savedOrder);
 
     await this.createOrderItemrepo(cartItems, savedOrder);
 
@@ -98,15 +100,16 @@ export class OrdersService {
     }
     return order
   }
-  async findByPaymentId(paymentId:string):Promise<Order |null>{
-    const order:Order|null=await this.OrderRepo.findOne({
+  async findByPaymentId(paymentId:string):Promise<Order>{
+    const order=await this.OrderRepo.findOne({
       where:{
         stripe_payment_intent_id:paymentId
       }
     })
-    if(order){
+    if(!order){
+      console.log('debugging order ewxist from stripe service',order);
       throw new NotFoundException("no order exist with this payment id")
     }
-    return order
+    return order  
   }
 }

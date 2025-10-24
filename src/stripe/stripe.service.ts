@@ -9,17 +9,11 @@ import Stripe from 'stripe';
 import { Request, Response } from 'express';
 import { CartItemsService } from 'src/cart_items/cart_items.service';
 import * as dotenv from 'dotenv';
-import { NoUnusedFragmentsRule } from 'graphql';
 import { OrdersService } from 'src/orders/orders.service';
-import { json } from 'body-parser';
-import { promiseHooks } from 'v8';
-import { eventNames } from 'process';
 import { WalletService } from 'src/wallet/wallet.service';
 import { VendorsService } from 'src/vendors/vendors.service';
-import { Order } from 'src/orders/entity/order.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from 'src/transactions/entity/transaction.entity';
-import { Repository } from 'typeorm';
 import { TransactionsService } from 'src/transactions/transactions.service';
 
 @Injectable()
@@ -45,10 +39,10 @@ export class StripeService {
     }
     const vendorId = cart.cartItems[0].product.vendor_id;
     const stripeacc = await this.walletService.findOneByVendorId(vendorId);
+
     // const platformFeePercent = 0.10;
-    console.log('debugging  vendor idddddd',vendorId);
-    console.log('debugging  vendor stripe',stripeacc);
-    
+    console.log('debugging  vendor id', vendorId);
+    console.log('debugging  vendor stripe', stripeacc);
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -113,12 +107,19 @@ export class StripeService {
         console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
         // Access phone number directly from session if available
-        const paymentIntent2 = session.payment_intent;
+        // stripe.service.ts
+        const paymentIntentId = session.payment_intent as string;
+
+        const paymentIntent3 =
+          await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+        console.log('debugging payentintent', paymentIntentId);
+
         const phoneNumber = session.customer_details?.phone as string;
         const email = session.customer_details?.email as string;
 
         await this.OrderServive.createOrderFromCart(
-          paymentIntent2,
+          paymentIntent3,
           email,
           phoneNumber,
         );
@@ -134,7 +135,7 @@ export class StripeService {
 
       case 'payment_method.attached':
         const paymentMethod = event.data.object as Stripe.PaymentMethod;
-        console.log(` Payment method attached: ${paymentMethod.id}`);
+        console.log(` Payment method attached:`);
         break;
 
       case 'charge.refunded':
@@ -144,7 +145,7 @@ export class StripeService {
 
       case 'checkout.session.expired':
         const expiredSession = event.data.object as Stripe.Checkout.Session;
-        console.log(` Checkout session expired: ${expiredSession.id}`);
+        console.log(` Checkout session expired:`);
         break;
 
       case 'charge.succeeded':
@@ -154,17 +155,26 @@ export class StripeService {
           const vendor = await this.walletService.findStripeAccountId(
             charge.transfer_data.destination as string,
           );
+          console.log('destination', charge.transfer_data.destination);
+          console.log('debugging vendor exist ', vendor);
+          const paymentIntentId = charge.payment_intent as string;
+
+        const paymentIntent3 =
+          await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
           if (vendor) {
+            console.log('debugging inside charge sucees', vendor);
             // Find order by payment intent
+            console.log('debugging patymenty intent', paymentIntent3.id);
+
             const order = await this.OrderServive.findByPaymentId(
-              charge.payment_intent as string,
+              paymentIntent3.id as string,
             );
+              // inow the problem now is order of webhook run  
 
             if (!order) {
-              throw new NotFoundException('no order with this payment id');
+              console.log('not found this order ');
             }
-
             if (order) {
               const commission = charge.amount * 0.1; // Example: 10% commission
 
@@ -172,14 +182,14 @@ export class StripeService {
               await this.walletService.processSaleTransaction(
                 order.id,
                 vendor.id,
-                charge.amount / 100, 
+                charge.amount / 100,
                 commission / 100,
                 charge.payment_intent as string,
               );
             }
           }
+          console.log('charge sucess', charge.transfer_data?.destination);
         }
-        console.log('charge sucess', charge.transfer_data?.destination);
         break;
 
       case 'transfer.failed':
@@ -262,7 +272,7 @@ export class StripeService {
           card_payments: { requested: true },
           transfers: { requested: true },
         },
-        business_type: vendorData.business_type, 
+        business_type: vendorData.business_type,
         business_profile: {
           name: vendorData.business_name,
           url: vendorData.website,

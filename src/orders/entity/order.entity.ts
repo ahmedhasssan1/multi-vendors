@@ -8,19 +8,20 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Client } from 'src/clients/entity/client.entity';
+import { StringDecoder } from 'string_decoder';
 
 @ObjectType()
 @Entity('orders')
 export class Order {
-  @Field(() => ID)
+  @Field()
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
+  @Field(()=>String,{ nullable: true })
+  @Column({ nullable: true ,type:"varchar"})
   stripe_payment_intent_id?: string;
 
-  @Field({ nullable: true })
+  @Field(()=>String,{ nullable: true })
   @Column({ nullable: true })
   stripe_checkout_session_id?: string; 
 

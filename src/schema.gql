@@ -92,7 +92,7 @@ type CartItem {
 }
 
 type Order {
-  id: ID!
+  id: Float!
   stripe_payment_intent_id: String
   stripe_checkout_session_id: String
   client: Client
