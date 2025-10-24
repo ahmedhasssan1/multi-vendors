@@ -11,6 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wallet } from './entity/wallet.entity';
 import { OrdersService } from 'src/orders/orders.service';
+import { Vendor } from 'src/vendors/entity/vendors.entity';
+import { VendorsService } from 'src/vendors/vendors.service';
 
 @Injectable()
 export class WalletService {
@@ -18,42 +20,79 @@ export class WalletService {
 
   constructor(
     @InjectRepository(Wallet) private walletRepository: Repository<Wallet>,
-    @InjectRepository(Transaction) private transactionRepository: Repository<Transaction>,
+    @InjectRepository(Transaction)
+    private transactionRepository: Repository<Transaction>,
     private configService: ConfigService,
-    private orderService: OrdersService, 
+    private orderService: OrdersService,
+    private VendorServie: VendorsService,
   ) {
     const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
   }
 
   // Create a new wallet for a vendor
-  async createWallet(
-    vendorId: number,
-    stripeAccountId: string,
-    currency = 'egp',
-  ): Promise<Wallet> {
+  async createWallet(vendorId: number, currency = 'USD'): Promise<Wallet> {
     // Check if wallet already exists
     const existingWallet = await this.walletRepository.findOne({
       where: { vendor: { id: Number(vendorId) } },
+      relations: ['vendor'],
     });
     if (existingWallet) {
       return existingWallet;
     }
+    const vendor = await this.VendorServie.findVendorById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException('this vendor not  exist');
+    }
+    const account = await this.stripe.accounts.create({
+      type: 'standard',
+      country: "EG",
+      email: vendor.email,
+      business_type: 'individual',
+      capabilities: {
+        transfers: { requested: true },
+        card_payments:{requested:true}
+      },
+      tos_acceptance: {
+        service_agreement: 'recipient',
+      },
+      metadata: { vendorId: vendorId },
+    });
+    const checkacc = await this.checkAccountCapabilities(account.id);
+    console.log('debugging checkkkk', checkacc);
 
     // Create new wallet
     const wallet = {
       vendorId,
-      stripeAccountId,
+      stripeAccountId: account.id,
       balance: 0,
       pendingBalance: 0,
       currency,
       lastUpdated: new Date(),
     };
 
-     this.walletRepository.create(wallet);
-     return await this.walletRepository.save(wallet)
+    const new_walllet = this.walletRepository.create(wallet);
+    return await this.walletRepository.save(new_walllet);
   }
 
+  async checkAccountCapabilities(accountId: string) {
+    try {
+      const account = await this.stripe.accounts.retrieve(accountId);
+      console.log(
+        'Transfer capability status:',
+        account.capabilities?.transfers,
+      );
+      console.log(
+        'Requirements currently due:',
+        account.requirements?.currently_due,
+      );
+      return account.capabilities;
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to check capabilities: ${error.message}`,
+      );
+    }
+  }
   // Get wallet by vendor ID
   async getWallet(vendorId: number): Promise<Wallet> {
     const wallet = await this.walletRepository.findOne({
@@ -65,12 +104,10 @@ export class WalletService {
     return wallet;
   }
 
-  // Sync wallet with Stripe balance
   async syncWalletWithStripe(vendorId: number): Promise<Wallet> {
     const wallet = await this.getWallet(vendorId);
 
     try {
-      // Get balance from Stripe
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
@@ -141,15 +178,15 @@ export class WalletService {
     };
 
     // Save both transactions
-    const commision= this.transactionRepository.create(commissionTransaction);
-    const savedSaleTransaction = this.transactionRepository.create(saleTransaction);
+    const commision = this.transactionRepository.create(commissionTransaction);
+    const savedSaleTransaction =
+      this.transactionRepository.create(saleTransaction);
 
     // Update wallet balance (although we'll rely on Stripe for source of truth)
     wallet.pendingBalance += amount - commission;
     await this.walletRepository.save(wallet);
-     await this.transactionRepository.save(savedSaleTransaction);
-     return await this.transactionRepository.save(commision);
-    
+    await this.transactionRepository.save(savedSaleTransaction);
+    return await this.transactionRepository.save(commision);
   }
 
   // Process a payout to vendor
@@ -314,5 +351,16 @@ export class WalletService {
     transaction.updatedAt = new Date();
 
     return this.transactionRepository.save(transaction);
+  }
+  async findOneByVendorId(vendorId: number) {
+    const wallet_exist = await this.walletRepository.findOne({
+      where: { vendor: { id: vendorId } },
+    });
+    if (!wallet_exist) {
+      console.log('this vendor does not have wallet we will create one');
+      const stripeAcc = await this.createWallet(vendorId);
+      return stripeAcc.stripeAccountId;
+    }
+    return wallet_exist.stripeAccountId;
   }
 }
