@@ -98,4 +98,15 @@ export class OrdersService {
     }
     return order
   }
+  async findByPaymentId(paymentId:string):Promise<Order |null>{
+    const order:Order|null=await this.OrderRepo.findOne({
+      where:{
+        stripe_payment_intent_id:paymentId
+      }
+    })
+    if(order){
+      throw new NotFoundException("no order exist with this payment id")
+    }
+    return order
+  }
 }

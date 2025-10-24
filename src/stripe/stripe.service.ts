@@ -15,6 +15,12 @@ import { json } from 'body-parser';
 import { promiseHooks } from 'v8';
 import { eventNames } from 'process';
 import { WalletService } from 'src/wallet/wallet.service';
+import { VendorsService } from 'src/vendors/vendors.service';
+import { Order } from 'src/orders/entity/order.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Transaction } from 'src/transactions/entity/transaction.entity';
+import { Repository } from 'typeorm';
+import { TransactionsService } from 'src/transactions/transactions.service';
 
 @Injectable()
 export class StripeService {
@@ -25,6 +31,8 @@ export class StripeService {
     private CartItemService: CartItemsService,
     private OrderServive: OrdersService,
     private walletService: WalletService,
+    private transactionsService: TransactionsService,
+    // private vendorService:VendorsService
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
@@ -38,6 +46,9 @@ export class StripeService {
     const vendorId = cart.cartItems[0].product.vendor_id;
     const stripeacc = await this.walletService.findOneByVendorId(vendorId);
     // const platformFeePercent = 0.10;
+    console.log('debugging  vendor idddddd',vendorId);
+    console.log('debugging  vendor stripe',stripeacc);
+    
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -52,7 +63,6 @@ export class StripeService {
         },
 
         quantity: item.quantity,
-        
       })),
 
       expand: ['customer'],
@@ -62,11 +72,10 @@ export class StripeService {
         transfer_data: {
           destination: stripeacc,
         },
-        
       },
-      
+
       shipping_address_collection: {
-        allowed_countries: ["EG"],
+        allowed_countries: ['EG'],
       },
       metadata: {
         client_email: cart.client_email,
@@ -139,12 +148,77 @@ export class StripeService {
         break;
 
       case 'charge.succeeded':
-        const chargeSuccess = event.data.object as Stripe.Charge;
-        // if(chargeSuccess.transfer_data?.destination){
-        //   const vendor=await
-        // }
-        console.log('charge sucess', chargeSuccess.transfer_data?.destination);
+        const charge = event.data.object as Stripe.Charge;
+        if (charge.transfer_data?.destination) {
+          // Find vendor by Stripe account ID
+          const vendor = await this.walletService.findStripeAccountId(
+            charge.transfer_data.destination as string,
+          );
 
+          if (vendor) {
+            // Find order by payment intent
+            const order = await this.OrderServive.findByPaymentId(
+              charge.payment_intent as string,
+            );
+
+            if (!order) {
+              throw new NotFoundException('no order with this payment id');
+            }
+
+            if (order) {
+              const commission = charge.amount * 0.1; // Example: 10% commission
+
+              // Process the sale transaction
+              await this.walletService.processSaleTransaction(
+                order.id,
+                vendor.id,
+                charge.amount / 100, 
+                commission / 100,
+                charge.payment_intent as string,
+              );
+            }
+          }
+        }
+        console.log('charge sucess', charge.transfer_data?.destination);
+        break;
+
+      case 'transfer.failed':
+        const transfer = event.data.object as Stripe.Transfer;
+        // Find vendor by Stripe account ID
+        const vendor = await this.walletService.findStripeAccountId(
+          transfer.destination as string,
+        );
+
+        if (vendor) {
+          const transaction =
+            await this.transactionsService.findoneByStripeTransferId(
+              transfer.id,
+            );
+
+          if (transaction) {
+            await this.walletService.updateTransactionStatus(
+              transaction.id,
+              (transfer as any).status === 'paid' ? 'completed' : 'pending',
+            );
+          }
+
+          // Sync wallet balance
+          await this.walletService.syncWalletWithStripe(vendor.id);
+        }
+        break;
+
+      case 'balance.available':
+        if (event.account) {
+          // Find vendor by Stripe account ID
+          const vendor = await this.walletService.findStripeAccountId(
+            event.account,
+          );
+
+          if (vendor) {
+            // Sync wallet balance
+            await this.walletService.syncWalletWithStripe(vendor.id);
+          }
+        }
         break;
       case 'charge.updated':
         const chargeUpdated = event.data.object as Stripe.Charge;
@@ -188,13 +262,13 @@ export class StripeService {
           card_payments: { requested: true },
           transfers: { requested: true },
         },
-        business_type: vendorData.business_type, // 'individual' or 'company'
+        business_type: vendorData.business_type, 
         business_profile: {
           name: vendorData.business_name,
           url: vendorData.website,
         },
         metadata: {
-          vendor_id: vendorData.vendorId, // Store reference to your system's vendor ID
+          vendor_id: vendorData.vendorId,
         },
       });
 

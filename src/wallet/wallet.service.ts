@@ -44,32 +44,33 @@ export class WalletService {
     if (!vendor) {
       throw new NotFoundException('this vendor not  exist');
     }
+    console.log('debugging inside wallet', vendor.email);
+
     const account = await this.stripe.accounts.create({
       type: 'standard',
-      country: "US",
+      country: 'US',
       email: vendor.email,
       business_type: 'individual',
       capabilities: {
         transfers: { requested: true },
-        card_payments:{requested:true}
+        card_payments: { requested: true },
       },
-      // tos_acceptance: {
-      //   service_agreement: 'recipient',
-      // },
+
       metadata: { vendorId: vendorId },
     });
     const checkacc = await this.checkAccountCapabilities(account.id);
-    console.log('debugging checkkkk', checkacc);
+    console.log('debugging check', account);
 
     // Create new wallet
     const wallet = {
-      vendorId,
+      vendor,
       stripeAccountId: account.id,
       balance: 0,
       pendingBalance: 0,
       currency,
       lastUpdated: new Date(),
     };
+    console.log('debugging check', wallet);
 
     const new_walllet = this.walletRepository.create(wallet);
     return await this.walletRepository.save(new_walllet);
@@ -112,7 +113,6 @@ export class WalletService {
         stripeAccount: wallet.stripeAccountId,
       });
 
-      // Update wallet with Stripe balance data
       wallet.balance =
         stripeBalance.available.reduce(
           (sum, bal) =>
@@ -150,7 +150,7 @@ export class WalletService {
     // Create the main sale transaction
     const saleTransaction = {
       walletId: wallet.id,
-      amount: amount - commission, // Amount after commission
+      amount: amount - commission,
       type: TransactionType.SALE,
       status: 'completed',
       orderId,
@@ -167,7 +167,7 @@ export class WalletService {
     // Create commission transaction record
     const commissionTransaction = {
       wallet: wallet,
-      amount: -commission, // Negative because it's deducted
+      amount: -commission,
       type: TransactionType.COMMISSION,
       status: 'completed',
       orderId,
@@ -205,7 +205,7 @@ export class WalletService {
       // Create Stripe payout
       const payout = await this.stripe.payouts.create(
         {
-          amount: Math.round(amount * 100), // Convert to cents
+          amount: Math.round(amount * 100),
           currency: wallet.currency.toLowerCase(),
           description: description,
         },
@@ -266,23 +266,21 @@ export class WalletService {
 
     const wallet = await this.getWallet(vendorId);
 
-    // Only check balance if it's a vendor refund, not admin refund
     if (!isAdminRefund && wallet.balance < amount) {
       throw new BadRequestException('Insufficient funds for refund');
     }
 
     try {
-      // Create Stripe refund
       const refund = await this.stripe.refunds.create({
         payment_intent: order.stripe_payment_intent_id,
-        amount: Math.round(amount * 100), // Convert to cents
+        amount: Math.round(amount * 100),
         reason: reason as Stripe.RefundCreateParams.Reason,
       });
 
       // Record transaction
       const transaction = {
         walletId: wallet.id,
-        amount: -amount, // Negative because it's outgoing
+        amount: -amount,
         type: TransactionType.REFUND,
         status: refund.status === 'succeeded' ? 'completed' : 'pending',
         orderId,
@@ -300,7 +298,6 @@ export class WalletService {
       const savedTransaction =
         await this.transactionRepository.create(transaction);
 
-      // Update wallet balance if it's a vendor refund
       if (!isAdminRefund && refund.status === 'succeeded') {
         wallet.balance -= amount;
         await this.walletRepository.save(wallet);
@@ -312,7 +309,6 @@ export class WalletService {
     }
   }
 
-  // Get transaction history for a vendor
   async getTransactionHistory(
     vendorId: number,
     filters = {},
@@ -362,5 +358,16 @@ export class WalletService {
       return stripeAcc.stripeAccountId;
     }
     return wallet_exist.stripeAccountId;
+  }
+  async findStripeAccountId(id: string) {
+    const stripeAcc = await this.walletRepository.findOne({
+      where: {
+        stripeAccountId: id,
+      },
+    });
+    if (!stripeAcc) {
+      console.log('no stripe acc for this stripe acc id');
+    }
+    return stripeAcc;
   }
 }
