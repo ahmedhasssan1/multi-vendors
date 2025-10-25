@@ -38,7 +38,7 @@ export class Wallet {
   @Field(() => Order)
   order: Order;
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({ type: 'float',default: 0 })
   @Field(() => Float)
   balance: number;
 

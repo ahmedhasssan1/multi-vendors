@@ -112,7 +112,9 @@ export class WalletService {
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
+      console.log('debugging stripe balance', stripeBalance);
 
+      // wallet.balance =stripeBalance.pending
       wallet.balance =
         stripeBalance.available.reduce(
           (sum, bal) =>
@@ -147,6 +149,7 @@ export class WalletService {
   ): Promise<Transaction> {
     const wallet = await this.getWallet(vendorId);
 
+    await this.syncWalletWithStripe(vendorId);
     // Create the main sale transaction
     console.log('debugging');
 
@@ -180,18 +183,17 @@ export class WalletService {
     };
 
     console.log('debugging  code arrival @@@@@@', commissionTransaction);
-    // Save both transactions
-    const commision = this.transactionRepository.create(commissionTransaction);
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
 
-    // Update wallet balance (although we'll rely on Stripe for source of truth)
     wallet.pendingBalance += amount - commission;
 
+    const sales = await this.transactionRepository.save(savedSaleTransaction);
     // await this.walletRepository.save(wallet);
+    const commision = this.transactionRepository.create(commissionTransaction);
     await this.transactionRepository.save(commision);
     console.log('debugging tranasction', savedSaleTransaction);
-    return await this.transactionRepository.save(savedSaleTransaction);
+    return sales;
   }
 
   // Process a payout to vendor
@@ -207,7 +209,6 @@ export class WalletService {
     }
 
     try {
-      // Create Stripe payout
       const payout = await this.stripe.payouts.create(
         {
           amount: Math.round(amount * 100),
@@ -219,10 +220,9 @@ export class WalletService {
         },
       );
 
-      // Record transaction
       const transaction = {
         walletId: wallet.id,
-        amount: -amount, // Negative because it's outgoing
+        amount: -amount,
         type: TransactionType.PAYOUT,
         status: payout.status === 'paid' ? 'completed' : 'pending',
         stripeTransferId: payout.id,
@@ -255,7 +255,6 @@ export class WalletService {
     }
   }
 
-  // Process a refund
   async processRefund(
     orderId: number,
     vendorId: number,
@@ -263,7 +262,6 @@ export class WalletService {
     reason = 'customer_requested',
     isAdminRefund = false,
   ): Promise<Transaction> {
-    // Get the order and related payment info
     const order = await this.orderService.findById(Number(orderId));
     if (!order) {
       throw new NotFoundException(`Order ${orderId} not found`);
@@ -282,7 +280,6 @@ export class WalletService {
         reason: reason as Stripe.RefundCreateParams.Reason,
       });
 
-      // Record transaction
       const transaction = {
         walletId: wallet.id,
         amount: -amount,

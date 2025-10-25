@@ -115,35 +115,26 @@ export class StripeService {
         const wallet_vendor2 = await this.walletService.findStripeAccountId(
           destination as string,
         );
-        
-        
+
         if (!wallet_vendor2) {
-          console.log(
-            '⚠️ Vendor not found for connected account:',
-            destination,
-          );
+          console.log(' Vendor not found for connected account:', destination);
         } else {
-          console.log('✅ Found vendor for connected account:', destination);
+          console.log(' Found vendor for connected account:', destination);
         }
-        
-        console.log('debugging vendorrrrr Id',wallet_vendor2?.id);
+
+        console.log('debugging vendorrrrr Id', wallet_vendor2?.id);
         // Determine the best email to use (try multiple sources)
         let customerEmail = '';
 
-        // Option 1: Check session customer details (most reliable)
+        // Options: checking where is email
+
         if (session.customer_details?.email) {
           customerEmail = session.customer_details.email;
-        }
-        // Option 2: Check payment intent metadata
-        else if (payment_intent.metadata?.client_email) {
+        } else if (payment_intent.metadata?.client_email) {
           customerEmail = payment_intent.metadata.client_email;
-        }
-        // Option 3: Check session metadata
-        else if (session.metadata?.client_email) {
+        } else if (session.metadata?.client_email) {
           customerEmail = session.metadata.client_email;
-        }
-        // Option 4: Use receipt email from payment intent
-        else if (payment_intent.receipt_email) {
+        } else if (payment_intent.receipt_email) {
           customerEmail = payment_intent.receipt_email;
         }
 
@@ -155,9 +146,8 @@ export class StripeService {
           customerEmail,
         );
 
-        // Calculate commission
         const amount2 = payment_intent.amount_received;
-        const commission = amount2 * 0.1; // Example 10% commission
+        const commission = amount2 * 0.1;
 
         // Process the vendor payment after a delay
         setTimeout(async () => {
@@ -203,7 +193,7 @@ export class StripeService {
         console.log('Found order3:', order3?.id);
 
         // Get vendorId and amount from your order or its items
-        // ✅ Create the order record in your DB
+        //  Create the order record in your DB
         const email = paymentIntent2.receipt_email as string;
         // const phone=paymentIntent2.de
 
@@ -233,35 +223,6 @@ export class StripeService {
           const vendor = await this.walletService.findStripeAccountId(
             charge.transfer_data.destination as string,
           );
-
-          if (vendor) {
-            const paymentIntentId = charge.payment_intent as string;
-
-            // ⏳ Delay to ensure order is saved
-            // setTimeout(async () => {
-            //   const order =
-            //     await this.OrderServive.findByPaymentId(paymentIntentId);
-            //   if (!order) {
-            //     console.log(
-            //       '❌ Order not found after delay for',
-            //       paymentIntentId,
-            //     );
-            //     return;
-            //   }
-
-            //   const amount = charge.amount / 100;
-            //   const commission = amount * 0.1;
-
-            //   await this.walletService.processSaleTransaction(
-            //     order.id,
-            //     vendor.id,
-            //     amount,
-            //     commission,
-            //     paymentIntentId,
-            //   );
-            //   console.log('✅ Sale transaction processed!');
-            // }, 3000);
-          }
         }
         break;
 
