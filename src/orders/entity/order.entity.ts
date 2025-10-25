@@ -17,8 +17,8 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field(()=>String,{ nullable: true })
-  @Column({ nullable: true ,type:"varchar"})
+  @Field(()=>String,)
+  @Column({ nullable: true ,})
   stripe_payment_intent_id?: string;
 
   @Field(()=>String,{ nullable: true })
@@ -61,7 +61,7 @@ export class Order {
   country?: string;
 
 
-  @Field()
+  @Field(()=>String)
   @Column({ nullable: true })
   phone?: string;
 

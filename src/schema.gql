@@ -93,7 +93,7 @@ type CartItem {
 
 type Order {
   id: Float!
-  stripe_payment_intent_id: String
+  stripe_payment_intent_id: String!
   stripe_checkout_session_id: String
   client: Client
   total_amount: Float!
@@ -113,7 +113,7 @@ type Wallet {
   stripeAccountId: String!
   order: Order!
   balance: Float!
-  transactions: Transaction!
+  transactions: [Transaction!]
   currency: String!
   pendingBalance: Float!
   created_at: DateTime!

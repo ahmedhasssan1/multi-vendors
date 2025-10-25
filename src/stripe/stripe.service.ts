@@ -11,9 +11,6 @@ import { CartItemsService } from 'src/cart_items/cart_items.service';
 import * as dotenv from 'dotenv';
 import { OrdersService } from 'src/orders/orders.service';
 import { WalletService } from 'src/wallet/wallet.service';
-import { VendorsService } from 'src/vendors/vendors.service';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Transaction } from 'src/transactions/entity/transaction.entity';
 import { TransactionsService } from 'src/transactions/transactions.service';
 
 @Injectable()
@@ -38,6 +35,7 @@ export class StripeService {
       throw new NotFoundException('no cart exist with this user');
     }
     const vendorId = cart.cartItems[0].product.vendor_id;
+
     const stripeacc = await this.walletService.findOneByVendorId(vendorId);
 
     // const platformFeePercent = 0.10;
@@ -73,7 +71,6 @@ export class StripeService {
       },
       metadata: {
         client_email: cart.client_email,
-        // vendor_account_id: vendorId,
       },
 
       phone_number_collection: {
@@ -104,32 +101,113 @@ export class StripeService {
     }
     switch (event.type) {
       case 'checkout.session.completed':
-        console.log(' Received checkout.sessson.completed');
         const session = event.data.object as Stripe.Checkout.Session;
-        // Access phone number directly from session if available
-        // stripe.service.ts
         const paymentIntentId = session.payment_intent as string;
 
-        const paymentIntent3 =
+        console.log('✅ Received checkout.session.completed event');
+
+        // Retrieve full payment intent
+        const payment_intent =
           await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
-        console.log('debugging payentintent', paymentIntentId);
-
-        const phoneNumber = session.customer_details?.phone as string;
-        const email = session.customer_details?.email as string;
-
-        await this.OrderServive.createOrderFromCart(
-          paymentIntent3,
-          email,
-          phoneNumber,
+        // Get connected account destination
+        const destination = payment_intent.transfer_data?.destination;
+        const wallet_vendor2 = await this.walletService.findStripeAccountId(
+          destination as string,
         );
-        console.log('order palced ');
+        
+        
+        if (!wallet_vendor2) {
+          console.log(
+            '⚠️ Vendor not found for connected account:',
+            destination,
+          );
+        } else {
+          console.log('✅ Found vendor for connected account:', destination);
+        }
+        
+        console.log('debugging vendorrrrr Id',wallet_vendor2?.id);
+        // Determine the best email to use (try multiple sources)
+        let customerEmail = '';
+
+        // Option 1: Check session customer details (most reliable)
+        if (session.customer_details?.email) {
+          customerEmail = session.customer_details.email;
+        }
+        // Option 2: Check payment intent metadata
+        else if (payment_intent.metadata?.client_email) {
+          customerEmail = payment_intent.metadata.client_email;
+        }
+        // Option 3: Check session metadata
+        else if (session.metadata?.client_email) {
+          customerEmail = session.metadata.client_email;
+        }
+        // Option 4: Use receipt email from payment intent
+        else if (payment_intent.receipt_email) {
+          customerEmail = payment_intent.receipt_email;
+        }
+
+        console.log('Using customer email:', customerEmail);
+
+        // Create order from cart
+        const order = await this.OrderServive.createOrderFromCart(
+          payment_intent,
+          customerEmail,
+        );
+
+        // Calculate commission
+        const amount2 = payment_intent.amount_received;
+        const commission = amount2 * 0.1; // Example 10% commission
+
+        // Process the vendor payment after a delay
+        setTimeout(async () => {
+          try {
+            const order2 = await this.OrderServive.findByPaymentId(
+              payment_intent.id,
+            );
+
+            if (!order2) {
+              console.log('⚠️ Order not found after delay');
+              return;
+            }
+
+            const vendorId = wallet_vendor2?.vendor.id as number;
+            const amount = Number(order2.total_amount);
+            const transaction = await this.walletService.processSaleTransaction(
+              order2.id,
+              vendorId,
+              amount,
+              commission,
+              payment_intent.id,
+            );
+
+            console.log('✅ Transaction processed:', transaction?.id);
+          } catch (error) {
+            console.error('❌ Error in delayed processing:', error);
+          }
+        }, 3000);
+
+        console.log(
+          '🧾 Order creation initiated for payment:',
+          payment_intent.id,
+        );
         break;
 
       case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
+        const paymentIntent2 = event.data.object as Stripe.PaymentIntent;
+        console.log('Payment intent succeeded:', paymentIntent2);
 
-        console.log('paymenyt intent successfully ');
+        const order3 = await this.OrderServive.findByPaymentId(
+          paymentIntent2.id,
+        );
+        console.log('Found order3:', order3?.id);
+
+        // Get vendorId and amount from your order or its items
+        // ✅ Create the order record in your DB
+        const email = paymentIntent2.receipt_email as string;
+        // const phone=paymentIntent2.de
+
+        await this.OrderServive.createOrderFromCart(paymentIntent2.id, email);
 
         break;
 
@@ -150,45 +228,40 @@ export class StripeService {
 
       case 'charge.succeeded':
         const charge = event.data.object as Stripe.Charge;
+
         if (charge.transfer_data?.destination) {
-          // Find vendor by Stripe account ID
           const vendor = await this.walletService.findStripeAccountId(
             charge.transfer_data.destination as string,
           );
-          console.log('destination', charge.transfer_data.destination);
-          console.log('debugging vendor exist ', vendor);
-          const paymentIntentId = charge.payment_intent as string;
-
-        const paymentIntent3 =
-          await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
           if (vendor) {
-            console.log('debugging inside charge sucees', vendor);
-            // Find order by payment intent
-            console.log('debugging patymenty intent', paymentIntent3.id);
+            const paymentIntentId = charge.payment_intent as string;
 
-            const order = await this.OrderServive.findByPaymentId(
-              paymentIntent3.id as string,
-            );
-              // inow the problem now is order of webhook run  
+            // ⏳ Delay to ensure order is saved
+            // setTimeout(async () => {
+            //   const order =
+            //     await this.OrderServive.findByPaymentId(paymentIntentId);
+            //   if (!order) {
+            //     console.log(
+            //       '❌ Order not found after delay for',
+            //       paymentIntentId,
+            //     );
+            //     return;
+            //   }
 
-            if (!order) {
-              console.log('not found this order ');
-            }
-            if (order) {
-              const commission = charge.amount * 0.1; // Example: 10% commission
+            //   const amount = charge.amount / 100;
+            //   const commission = amount * 0.1;
 
-              // Process the sale transaction
-              await this.walletService.processSaleTransaction(
-                order.id,
-                vendor.id,
-                charge.amount / 100,
-                commission / 100,
-                charge.payment_intent as string,
-              );
-            }
+            //   await this.walletService.processSaleTransaction(
+            //     order.id,
+            //     vendor.id,
+            //     amount,
+            //     commission,
+            //     paymentIntentId,
+            //   );
+            //   console.log('✅ Sale transaction processed!');
+            // }, 3000);
           }
-          console.log('charge sucess', charge.transfer_data?.destination);
         }
         break;
 
@@ -215,6 +288,7 @@ export class StripeService {
           // Sync wallet balance
           await this.walletService.syncWalletWithStripe(vendor.id);
         }
+
         break;
 
       case 'balance.available':

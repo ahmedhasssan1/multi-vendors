@@ -29,7 +29,7 @@ export class OrdersService {
   ) {}
 
   // order.service.ts
-  async createOrderFromCart(paymentIntent: any, email: string, phone: string) {
+  async   createOrderFromCart(paymentIntent: any, email: string, phone?: string) {
     const client = await this.clientService.findUserByEmail(email);
     if (!client) {
       throw new NotFoundException('mo client with this id');
@@ -39,7 +39,7 @@ export class OrdersService {
     const cartItems = await this.cartItemsService.getClientItemsById(client.id);
     
     const order = this.OrderRepo.create({
-      stripe_payment_intent_id: paymentIntent.id,
+      stripe_payment_intent_id: paymentIntent.id || paymentIntent,
       total_amount: paymentIntent.amount,
       status: 'PAID',
       client: client,
@@ -104,7 +104,7 @@ export class OrdersService {
     const order=await this.OrderRepo.findOne({
       where:{
         stripe_payment_intent_id:paymentId
-      }
+      },
     })
     if(!order){
       console.log('debugging order ewxist from stripe service',order);

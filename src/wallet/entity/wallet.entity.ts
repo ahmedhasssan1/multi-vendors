@@ -29,8 +29,8 @@ export class Wallet {
   @JoinColumn({ name: 'vendor' })
   vendor: Vendor;
 
- @Field(() => String)
-  @Column({ type: 'varchar', length: 255 })
+  @Field(() => String)
+  @Column({ type: 'varchar', length: 255 ,nullable:true})
   stripeAccountId: string;
 
   @ManyToOne(() => Order, (order) => order.id, { onDelete: 'SET NULL' })
@@ -42,15 +42,17 @@ export class Wallet {
   @Field(() => Float)
   balance: number;
 
-  @OneToMany(() => Transaction, transaction => transaction.wallet,{onDelete:"SET NULL"})
-  @Field(()=>Transaction)
+  @OneToMany(() => Transaction, (transaction) => transaction.wallet, {
+    onDelete: 'SET NULL',
+  })
+  @Field(() => [Transaction], { nullable: true })
   transactions: Transaction[];
 
-  @Column({ type: "varchar" })
+  @Column({ type: 'varchar' ,nullable:true})
   @Field(() => String)
   currency: string;
 
-  @Column({ type: 'float' })
+  @Column({ type: 'float' ,nullable:true})
   @Field(() => Float)
   pendingBalance: number;
 
