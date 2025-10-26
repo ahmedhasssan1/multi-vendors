@@ -150,7 +150,6 @@ export class StripeService {
         const commission = amount2 * 0.1;
 
         // Process the vendor payment after a delay
-        setTimeout(async () => {
           try {
             const order2 = await this.OrderServive.findByPaymentId(
               payment_intent.id,
@@ -175,7 +174,6 @@ export class StripeService {
           } catch (error) {
             console.error('❌ Error in delayed processing:', error);
           }
-        }, 3000);
 
         console.log(
           '🧾 Order creation initiated for payment:',
