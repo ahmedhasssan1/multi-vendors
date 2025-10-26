@@ -122,6 +122,7 @@ export class WalletService {
             (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
           0,
         ) / 100;
+      console.log('balaaaaaaaance ', wallet.balance);
 
       wallet.pendingBalance =
         stripeBalance.pending.reduce(
@@ -132,6 +133,7 @@ export class WalletService {
         ) / 100;
 
       wallet.lastUpdated = new Date();
+      console.log('debugging amount', wallet.balance);
 
       return this.walletRepository.save(wallet);
     } catch (error) {
@@ -182,16 +184,18 @@ export class WalletService {
       updatedAt: new Date(),
     };
 
-    console.log('debugging  code arrival @@@@@@', commissionTransaction);
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
 
-    wallet.pendingBalance += amount - commission;
-
-    const sales = await this.transactionRepository.save(savedSaleTransaction);
-    // await this.walletRepository.save(wallet);
     const commision = this.transactionRepository.create(commissionTransaction);
+
+    const bal = (wallet.pendingBalance += amount - commission);
+    
+    wallet.balance = bal;
+    const sales = await this.transactionRepository.save(savedSaleTransaction);
+    await this.walletRepository.save(wallet);
     await this.transactionRepository.save(commision);
+    console.log('debugging  code arrival @@@@@@', commision);
     console.log('debugging tranasction', savedSaleTransaction);
     return sales;
   }
@@ -237,9 +241,11 @@ export class WalletService {
         updatedAt: new Date(),
       };
 
-      const savedTransaction =
+      const createTransaction =
         await this.transactionRepository.create(transaction);
 
+      const savedTransaction =
+        await this.transactionRepository.save(createTransaction);
       // Update wallet balance
       if (payout.status === 'paid') {
         wallet.balance -= amount;

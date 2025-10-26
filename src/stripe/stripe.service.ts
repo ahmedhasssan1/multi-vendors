@@ -39,8 +39,6 @@ export class StripeService {
     const stripeacc = await this.walletService.findOneByVendorId(vendorId);
 
     // const platformFeePercent = 0.10;
-    console.log('debugging  vendor id', vendorId);
-    console.log('debugging  vendor stripe', stripeacc);
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -67,7 +65,7 @@ export class StripeService {
       },
 
       shipping_address_collection: {
-        allowed_countries: ['EG'],
+        allowed_countries: ['EG',"US"],
       },
       metadata: {
         client_email: cart.client_email,
@@ -104,7 +102,7 @@ export class StripeService {
         const session = event.data.object as Stripe.Checkout.Session;
         const paymentIntentId = session.payment_intent as string;
 
-        console.log('✅ Received checkout.session.completed event');
+        console.log(' Received checkout.session.completed event');
 
         // Retrieve full payment intent
         const payment_intent =
@@ -156,7 +154,7 @@ export class StripeService {
             );
 
             if (!order2) {
-              console.log('⚠️ Order not found after delay');
+              console.log(' Order not found after delay');
               return;
             }
 
@@ -170,13 +168,13 @@ export class StripeService {
               payment_intent.id,
             );
 
-            console.log('✅ Transaction processed:', transaction?.id);
+            console.log(' Transaction processed:', transaction?.id);
           } catch (error) {
-            console.error('❌ Error in delayed processing:', error);
+            console.error(' Error in delayed processing:', error);
           }
 
         console.log(
-          '🧾 Order creation initiated for payment:',
+          ' Order creation initiated for payment:',
           payment_intent.id,
         );
         break;
@@ -251,11 +249,14 @@ export class StripeService {
         break;
 
       case 'balance.available':
+        
         if (event.account) {
           // Find vendor by Stripe account ID
           const vendor = await this.walletService.findStripeAccountId(
             event.account,
           );
+          console.log('debugging fi balance avaliable',vendor?.balance);
+          
 
           if (vendor) {
             // Sync wallet balance
