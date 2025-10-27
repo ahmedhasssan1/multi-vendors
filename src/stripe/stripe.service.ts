@@ -65,7 +65,7 @@ export class StripeService {
       },
 
       shipping_address_collection: {
-        allowed_countries: ['EG',"US"],
+        allowed_countries: ['EG', 'US'],
       },
       metadata: {
         client_email: cart.client_email,
@@ -101,76 +101,7 @@ export class StripeService {
       case 'checkout.session.completed':
         const session = event.data.object as Stripe.Checkout.Session;
         const paymentIntentId = session.payment_intent as string;
-
-        console.log(' Received checkout.session.completed event');
-
-        // Retrieve full payment intent
-        const payment_intent =
-          await this.stripe.paymentIntents.retrieve(paymentIntentId);
-
-        // Get connected account destination
-        const destination = payment_intent.transfer_data?.destination;
-        const wallet_vendor2 = await this.walletService.findStripeAccountId(
-          destination as string,
-        );
-
-        if (!wallet_vendor2) {
-          console.log(' Vendor not found for connected account:', destination);
-        } else {
-          console.log(' Found vendor for connected account:', destination);
-        }
-
-        console.log('debugging vendorrrrr Id', wallet_vendor2?.id);
-        // Determine the best email to use (try multiple sources)
-        let customerEmail = '';
-
-        // Options: checking where is email
-
-        if (session.customer_details?.email) {
-          customerEmail = session.customer_details.email;
-        } else if (payment_intent.metadata?.client_email) {
-          customerEmail = payment_intent.metadata.client_email;
-        } else if (session.metadata?.client_email) {
-          customerEmail = session.metadata.client_email;
-        } else if (payment_intent.receipt_email) {
-          customerEmail = payment_intent.receipt_email;
-        }
-
-        console.log('Using customer email:', customerEmail);
-
-        // Create order from cart
-        const order = await this.OrderServive.createOrderFromCart(
-          payment_intent,
-          customerEmail,
-        );
-
-        const amount2 = payment_intent.amount_received;
-        const commission = (amount2 * 0.1)/100;
-
-        // Process the vendor payment after a delay
-          try {
-            const order2 = await this.OrderServive.findByPaymentId(
-              payment_intent.id,
-            );
-
-            if (!order2) {
-              console.log(' Order not found after delay');
-              return;
-            }
-
-            const vendorId = wallet_vendor2?.vendor.id as number;
-            const amount = (order2.total_amount);
-            const transaction = await this.walletService.processSaleTransaction(
-              order2.id,
-              vendorId,
-              amount,
-              commission,
-              payment_intent.id,
-            );
-
-          } catch (error) {
-            console.error(' Error in delayed processing:', error);
-          }
+        await this.handleSessionComplete(session, paymentIntentId);
         break;
 
       case 'payment_intent.succeeded':
@@ -181,11 +112,7 @@ export class StripeService {
           paymentIntent2.id,
         );
         console.log('Found order3:', order3?.id);
-
-        // Get vendorId and amount from your order or its items
-        //  Create the order record in your DB
         const email = paymentIntent2.receipt_email as string;
-        // const phone=paymentIntent2.de
 
         await this.OrderServive.createOrderFromCart(paymentIntent2.id, email);
 
@@ -197,8 +124,24 @@ export class StripeService {
         break;
 
       case 'charge.refunded':
-        const chargeRefund = event.data.object;
-        console.log('refund phase ');
+        const charge_REFUND = event.data.object as Stripe.Charge;
+        console.log(
+          'Charge refunded:',
+          charge_REFUND.id,
+          'Payment Intent:',
+          charge_REFUND.payment_intent,
+        );
+
+        break;
+      case 'charge.refunded':
+        const refund = event.data.object as Stripe.Refund;
+        console.log('Refund updated:', refund.id, 'Status:', refund.status);
+
+        if (refund.status === 'succeeded') {
+          console.log('Refund succeeded');
+        } else if (refund.status === 'failed') {
+          console.log('Refund failed:', refund.failure_reason);
+        }
         break;
 
       case 'checkout.session.expired':
@@ -232,7 +175,7 @@ export class StripeService {
           if (transaction) {
             await this.walletService.updateTransactionStatus(
               transaction.id,
-              (transfer as any).status === 'paid' ? 'completed' : 'pending',
+              'failed',
             );
           }
 
@@ -242,15 +185,19 @@ export class StripeService {
 
         break;
 
+      case 'payout.created':
+        const payout = event.data.object as Stripe.Payout;
+
+        console.log('payout phase..');
+
+        break;
       case 'balance.available':
-        
         if (event.account) {
           // Find vendor by Stripe account ID
           const vendor = await this.walletService.findStripeAccountId(
             event.account,
           );
-          console.log('debugging fi balance avaliable',vendor?.balance);
-          
+          console.log('debugging fi balance avaliable', vendor?.balance);
 
           if (vendor) {
             // Sync wallet balance
@@ -283,10 +230,27 @@ export class StripeService {
     // })
   }
   async refund(payment_intentId: string) {
-    const refund = await this.stripe.refunds.create({
-      payment_intent: payment_intentId,
-    });
-    return `refund done: ${refund.amount} `;
+    console.log('debugging refund amount');
+    const find_order = await this.OrderServive.findByPaymentId(
+      payment_intentId as string,
+    );
+    if (!find_order) {
+      console.log('no order exist with this paymentintent');
+    }
+    find_order.status = 'REFUND';
+    await this.OrderServive.saveOrder(find_order);
+    try {
+      const refund = await this.stripe.refunds.create({
+        payment_intent: payment_intentId,
+        reason: 'requested_by_customer',
+      });
+      console.log('debugging refund', refund);
+
+      return 'refund process done successfully';
+    } catch (error) {
+      console.error('RefSund failed:', error.message);
+      throw new BadRequestException(`Refund failed: ${error.message}`);
+    }
   }
 
   async createVendorAccount(vendorData) {
@@ -326,6 +290,77 @@ export class StripeService {
       throw new BadRequestException(
         `Failed to create vendor account: ${error.message}`,
       );
+    }
+  }
+  async handleSessionComplete(
+    session: Stripe.Checkout.Session,
+    paymentIntentId: string,
+  ) {
+    console.log(' Received checkout.session.completed event');
+
+    // Retrieve full payment intent
+    const payment_intent =
+      await this.stripe.paymentIntents.retrieve(paymentIntentId);
+
+    // Get connected account destination
+    const destination = payment_intent.transfer_data?.destination;
+    const wallet_vendor2 = await this.walletService.findStripeAccountId(
+      destination as string,
+    );
+
+    if (!wallet_vendor2) {
+      console.log(' Vendor not found for connected account:', destination);
+    } else {
+      console.log(' Found vendor for connected account:', destination);
+    }
+
+    console.log('debugging vendorrrrr Id', wallet_vendor2?.id);
+    // Determine the best email to use (try multiple sources)
+    let customerEmail = '';
+
+    // Options: checking where is email
+
+    if (session.customer_details?.email) {
+      customerEmail = session.customer_details.email;
+    } else if (payment_intent.metadata?.client_email) {
+      customerEmail = payment_intent.metadata.client_email;
+    } else if (session.metadata?.client_email) {
+      customerEmail = session.metadata.client_email;
+    } else if (payment_intent.receipt_email) {
+      customerEmail = payment_intent.receipt_email;
+    }
+
+    console.log('Using customer email:', customerEmail);
+
+    // Create order from cart
+    const order = await this.OrderServive.createOrderFromCart(
+      payment_intent,
+      customerEmail,
+    );
+
+    const amount2 = payment_intent.amount_received;
+    const commission = (amount2 * 0.1) / 100;
+
+    // Process the vendor payment after a delay
+    try {
+      const order2 = await this.OrderServive.findByPaymentId(payment_intent.id);
+
+      if (!order2) {
+        console.log(' Order not found after delay');
+        return;
+      }
+
+      const vendorId = wallet_vendor2?.vendor.id as number;
+      const amount = order2.total_amount;
+      const transaction = await this.walletService.processSaleTransaction(
+        order2.id,
+        vendorId,
+        amount,
+        commission,
+        payment_intent.id,
+      );
+    } catch (error) {
+      console.error(' Error in delayed processing:', error);
     }
   }
 

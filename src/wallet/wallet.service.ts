@@ -13,6 +13,7 @@ import { Wallet } from './entity/wallet.entity';
 import { OrdersService } from 'src/orders/orders.service';
 import { Vendor } from 'src/vendors/entity/vendors.entity';
 import { VendorsService } from 'src/vendors/vendors.service';
+import { ref } from 'process';
 
 @Injectable()
 export class WalletService {
@@ -263,62 +264,22 @@ export class WalletService {
     }
   }
 
-  async processRefund(
-    orderId: number,
-    vendorId: number,
-    amount: number,
-    reason = 'customer_requested',
-    isAdminRefund = false,
-  ): Promise<Transaction> {
-    const order = await this.orderService.findById(Number(orderId));
-    if (!order) {
-      throw new NotFoundException(`Order ${orderId} not found`);
-    }
-
-    const wallet = await this.getWallet(vendorId);
-
-    if (!isAdminRefund && wallet.balance < amount) {
-      throw new BadRequestException('Insufficient funds for refund');
-    }
-
+  // Function to process a refund
+  async refundPayment(paymentIntentId: string, ) {
     try {
       const refund = await this.stripe.refunds.create({
-        payment_intent: order.stripe_payment_intent_id,
-        amount: Math.round(amount * 100),
-        reason: reason as Stripe.RefundCreateParams.Reason,
+        charge: paymentIntentId,
+        reason: 'requested_by_customer',
+        // amount: amount,
       });
+      console.log('debugging refund', refund);
 
-      const transaction = {
-        walletId: wallet.id,
-        amount: -amount,
-        type: TransactionType.REFUND,
-        status: refund.status === 'succeeded' ? 'completed' : 'pending',
-        orderId,
-        stripePaymentId: order.stripe_payment_intent_id,
-        stripeRefundId: refund.id,
-        description: `Refund for order #${orderId}`,
-        metadata: {
-          reason,
-          isAdminRefund,
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const savedTransaction =
-        await this.transactionRepository.create(transaction);
-
-      if (!isAdminRefund && refund.status === 'succeeded') {
-        wallet.balance -= amount;
-        await this.walletRepository.save(wallet);
-      }
-
-      return savedTransaction;
+      return refund;
     } catch (error) {
+      console.error('Refund failed:', error.message);
       throw new BadRequestException(`Refund failed: ${error.message}`);
     }
   }
-
   async getTransactionHistory(
     vendorId: number,
     filters = {},

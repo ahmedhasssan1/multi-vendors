@@ -112,4 +112,8 @@ export class OrdersService {
     }
     return order  
   }
+  async saveOrder(order:Order):Promise<Order>{
+    return await this.OrderRepo.save(order)
+  }
+ 
 }

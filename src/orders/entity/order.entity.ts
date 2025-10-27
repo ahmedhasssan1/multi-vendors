@@ -41,7 +41,8 @@ export class Order {
     | 'SHIPPED'
     | 'DELIVERED'
     | 'CANCELLED'
-    | 'PAID';
+    | 'PAID'
+    | "REFUND";
 
   // Stripe shipping info
   @Field({ nullable: true })
