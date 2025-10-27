@@ -94,7 +94,7 @@ export class StripeService {
         this.webhookSecret,
       );
     } catch (err) {
-      console.error(`⚠️ Webhook signature verification failed.`, err.message);
+      console.error(` Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
     switch (event.type) {
@@ -145,7 +145,7 @@ export class StripeService {
         );
 
         const amount2 = payment_intent.amount_received;
-        const commission = amount2 * 0.1;
+        const commission = (amount2 * 0.1)/100;
 
         // Process the vendor payment after a delay
           try {
@@ -159,7 +159,7 @@ export class StripeService {
             }
 
             const vendorId = wallet_vendor2?.vendor.id as number;
-            const amount = Number(order2.total_amount);
+            const amount = (order2.total_amount);
             const transaction = await this.walletService.processSaleTransaction(
               order2.id,
               vendorId,
@@ -168,15 +168,9 @@ export class StripeService {
               payment_intent.id,
             );
 
-            console.log(' Transaction processed:', transaction?.id);
           } catch (error) {
             console.error(' Error in delayed processing:', error);
           }
-
-        console.log(
-          ' Order creation initiated for payment:',
-          payment_intent.id,
-        );
         break;
 
       case 'payment_intent.succeeded':

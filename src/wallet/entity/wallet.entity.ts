@@ -38,9 +38,9 @@ export class Wallet {
   @Field(() => Order)
   order: Order;
 
-  @Column({ type: 'float',default: 0 })
-  @Field(() => Float)
-  balance: number;
+    @Column({ type: 'float',default: 0 })
+    @Field(() => Float)
+    balance: number;
 
   @OneToMany(() => Transaction, (transaction) => transaction.wallet, {
     onDelete: 'SET NULL',

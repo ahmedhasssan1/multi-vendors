@@ -36,7 +36,7 @@ export class Transaction {
 
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2 })
-  amount: number; // Positive for incoming, negative for outgoing
+  amount: number; 
 
   @Field(() => TransactionType)
   @Column({

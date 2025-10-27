@@ -112,7 +112,6 @@ export class WalletService {
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
-      console.log('debugging stripe balance', stripeBalance);
 
       // wallet.balance =stripeBalance.pending
       wallet.balance =
@@ -122,7 +121,6 @@ export class WalletService {
             (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
           0,
         ) / 100;
-      console.log('balaaaaaaaance ', wallet.balance);
 
       wallet.pendingBalance =
         stripeBalance.pending.reduce(
@@ -152,12 +150,16 @@ export class WalletService {
     const wallet = await this.getWallet(vendorId);
 
     await this.syncWalletWithStripe(vendorId);
-    // Create the main sale transaction
-    console.log('debugging');
+
+    console.log('debugging commsision', commission);
+    console.log('debugging amount', amount);
+
+    const amountInCurrency = (amount - commission) / 100;
+    console.log('debugging  cuccerncy', amountInCurrency.toFixed(2));
 
     const saleTransaction = {
       wallet: wallet,
-      amount: amount - commission,
+      amount: amountInCurrency,
       type: TransactionType.SALE,
       status: 'completed',
       orderId,
@@ -171,10 +173,9 @@ export class WalletService {
       updatedAt: new Date(),
     };
 
-    // Create commission transaction record
     const commissionTransaction = {
       wallet: wallet,
-      amount: -commission,
+      amount: -commission / 100,
       type: TransactionType.COMMISSION,
       status: 'completed',
       orderId,
@@ -189,13 +190,14 @@ export class WalletService {
 
     const commision = this.transactionRepository.create(commissionTransaction);
 
-    const bal = (wallet.pendingBalance += amount - commission);
-    
-    wallet.balance = bal;
+    wallet.pendingBalance += amount - commission;
+
+    wallet.balance = wallet.pendingBalance / 100;
+    console.log('debugging  wlalet balance', wallet.balance);
+
     const sales = await this.transactionRepository.save(savedSaleTransaction);
     await this.walletRepository.save(wallet);
     await this.transactionRepository.save(commision);
-    console.log('debugging  code arrival @@@@@@', commision);
     console.log('debugging tranasction', savedSaleTransaction);
     return sales;
   }
