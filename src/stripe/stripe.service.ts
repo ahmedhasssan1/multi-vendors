@@ -296,11 +296,9 @@ export class StripeService {
   ) {
     console.log(' Received checkout.session.completed event');
 
-    // Retrieve full payment intent
     const payment_intent =
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
-    // Get connected account destination
     const destination = payment_intent.transfer_data?.destination;
     const wallet_vendor2 = await this.walletService.findStripeAccountId(
       destination as string,
@@ -313,7 +311,6 @@ export class StripeService {
     }
 
     console.log('debugging vendorrrrr Id', wallet_vendor2?.id);
-    // Determine the best email to use (try multiple sources)
     let customerEmail = '';
 
     // Options: checking where is email
