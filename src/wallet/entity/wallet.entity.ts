@@ -30,17 +30,12 @@ export class Wallet {
   vendor: Vendor;
 
   @Field(() => String)
-  @Column({ type: 'varchar', length: 255 ,nullable:true})
+  @Column({ type: 'varchar', length: 255, nullable: true })
   stripeAccountId: string;
 
-  @ManyToOne(() => Order, (order) => order.id, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'order' })
-  @Field(() => Order)
-  order: Order;
-
-    @Column({ type: 'float',default: 0 })
-    @Field(() => Float)
-    balance: number;
+  @Column({ type: 'float', default: 0 })
+  @Field(() => Float)
+  balance: number;
 
   @OneToMany(() => Transaction, (transaction) => transaction.wallet, {
     onDelete: 'SET NULL',
@@ -48,11 +43,11 @@ export class Wallet {
   @Field(() => [Transaction], { nullable: true })
   transactions: Transaction[];
 
-  @Column({ type: 'varchar' ,nullable:true})
+  @Column({ type: 'varchar', nullable: true })
   @Field(() => String)
   currency: string;
 
-  @Column({ type: 'float' ,nullable:true})
+  @Column({ type: 'float', nullable: true })
   @Field(() => Float)
   pendingBalance: number;
 

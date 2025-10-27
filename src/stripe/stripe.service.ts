@@ -225,9 +225,7 @@ export class StripeService {
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
 
-    // process.nextTick(()=>{
-    //   this.handleEvent(event)
-    // })
+
   }
   async refund(payment_intentId: string) {
     console.log('debugging refund amount');

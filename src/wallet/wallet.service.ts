@@ -152,12 +152,11 @@ export class WalletService {
 
     await this.syncWalletWithStripe(vendorId);
 
-    console.log('debugging commsision', commission);
-    console.log('debugging amount', amount);
 
-    const amountInCurrency = (amount - commission) / 100;
-    console.log('debugging  cuccerncy', amountInCurrency.toFixed(2));
-
+    const amountInCurrency = (amount/100)-commission ;
+    
+    console.log('debugging amount 22 :',amountInCurrency );
+  
     const saleTransaction = {
       wallet: wallet,
       amount: amountInCurrency,
@@ -167,7 +166,7 @@ export class WalletService {
       stripePaymentId,
       description: `Sale payment for order #${orderId}`,
       metadata: {
-        originalAmount: amount,
+        originalAmount: amount/100,
         commission: commission,
       },
       createdAt: new Date(),
@@ -176,7 +175,7 @@ export class WalletService {
 
     const commissionTransaction = {
       wallet: wallet,
-      amount: -commission / 100,
+      amount: -commission ,
       type: TransactionType.COMMISSION,
       status: 'completed',
       orderId,

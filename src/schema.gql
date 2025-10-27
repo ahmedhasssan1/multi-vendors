@@ -111,7 +111,6 @@ type Wallet {
   id: ID!
   vendor: Vendor!
   stripeAccountId: String!
-  order: Order!
   balance: Float!
   transactions: [Transaction!]
   currency: String!
