@@ -15,6 +15,7 @@ import { bullmqService } from 'src/bullmq/bullmq.service';
 import { ProductsService } from 'src/products/products.service';
 import { VendorsService } from 'src/vendors/vendors.service';
 import { CartItem } from 'src/cart_items/entity/cart_item.entity';
+import { Vendor } from 'src/vendors/entity/vendors.entity';
 
 @Injectable()
 export class OrdersService {
@@ -29,28 +30,39 @@ export class OrdersService {
   ) {}
 
   // order.service.ts
-  async   createOrderFromCart(paymentIntent: any, email: string, phone?: string) {
+  async createOrderFromCart(
+    paymentIntent: any,
+    email: string,
+    phone?: string,
+    vendorId?: number,
+  ) {
     const client = await this.clientService.findUserByEmail(email);
     if (!client) {
       throw new NotFoundException('mo client with this id');
     }
-    console.log('Saving order with payment intent:', paymentIntent.id || paymentIntent);
-
+    console.log(
+      'Saving order with payment intent:',
+      paymentIntent.id || paymentIntent,
+    );
+    const vendorExist = await this.vendoeService.findVendorById(vendorId as number);
+    if (!vendorExist) {
+      throw new NotFoundException('no vendor');
+    }
     const cartItems = await this.cartItemsService.getClientItemsById(client.id);
-    
+
     const order = this.OrderRepo.create({
       stripe_payment_intent_id: paymentIntent.id || paymentIntent,
       total_amount: paymentIntent.amount,
       status: 'PAID',
       client: client,
       phone,
+      vendor:vendorExist,
       customer_name: paymentIntent.shipping?.name,
       address_line1: paymentIntent.shipping?.address?.line1,
       city: paymentIntent.shipping?.address?.city,
       country: paymentIntent.shipping?.address?.country,
     });
-    
-    
+
     const savedOrder = await this.OrderRepo.save(order);
     console.log('Saved order:', savedOrder);
 
@@ -91,29 +103,41 @@ export class OrdersService {
 
     return await this.OrderItemRepo.save(cartItem);
   }
-  async findById(id:number):Promise<Order>{
-    const order=await this.OrderRepo.findOne({
-      where:{id}
-    })
-    if(!order){
-      throw new NotFoundException("this order not exist ")
+  async findById(id: number): Promise<Order> {
+    const order = await this.OrderRepo.findOne({
+      where: { id },
+    });
+    if (!order) {
+      throw new NotFoundException('this order not exist ');
     }
-    return order
+    return order;
   }
-  async findByPaymentId(paymentId:string):Promise<Order>{
-    const order=await this.OrderRepo.findOne({
-      where:{
-        stripe_payment_intent_id:paymentId
+  async findByPaymentId(paymentId: string): Promise<Order> {
+    const order = await this.OrderRepo.findOne({
+      where: {
+        stripe_payment_intent_id: paymentId,
       },
-    })
-    if(!order){
-      console.log('debugging order ewxist from stripe service',order);
-      throw new NotFoundException("no order exist with this payment id")
+    });
+    if (!order) {
+      console.log('debugging order ewxist from stripe service', order);
+      throw new NotFoundException('no order exist with this payment id');
     }
-    return order  
+    return order;
   }
-  async saveOrder(order:Order):Promise<Order>{
-    return await this.OrderRepo.save(order)
+  async saveOrder(order: Order): Promise<Order> {
+    return await this.OrderRepo.save(order);
   }
- 
+  async getvendorIdProductCost(id: number) {
+    const vendor = await this.OrderItemRepo.find({
+      where: {
+        product:{vendor_id:id}
+      },relations:["product"]
+    });
+    if (!vendor) {
+      throw new NotFoundException(
+        'this vendor does not have product in client cart',
+      );
+    }
+    return vendor;
+  }
 }

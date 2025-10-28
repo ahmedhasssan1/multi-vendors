@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Client } from 'src/clients/entity/client.entity';
 import { StringDecoder } from 'string_decoder';
+import { Vendor } from 'src/vendors/entity/vendors.entity';
 
 @ObjectType()
 @Entity('orders')
@@ -28,6 +29,10 @@ export class Order {
   @Field(() => Client, { nullable: true })
   @ManyToOne(() => Client, (client) => client.id)
   client?: Client;
+
+  @Field(() => Vendor, { nullable: true })
+  @ManyToOne(() => Vendor, (vendor) => vendor.id,{nullable:true})
+  vendor?: Vendor;
 
   @Field(() => Float)
   @Column('decimal', { precision: 10, scale: 2, default: 0 })

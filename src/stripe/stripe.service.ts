@@ -12,6 +12,8 @@ import * as dotenv from 'dotenv';
 import { OrdersService } from 'src/orders/orders.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
+import { Vendor } from 'src/vendors/entity/vendors.entity';
+import { VendorsService } from 'src/vendors/vendors.service';
 
 @Injectable()
 export class StripeService {
@@ -23,7 +25,7 @@ export class StripeService {
     private OrderServive: OrdersService,
     private walletService: WalletService,
     private transactionsService: TransactionsService,
-    // private vendorService:VendorsService
+    private vendorService: VendorsService,
   ) {
     const stripeKey = this.ConfigService.get<string>('STRIPE_SECRET_KEY');
     this.stripe = new Stripe(stripeKey as string);
@@ -37,6 +39,14 @@ export class StripeService {
     const vendorId = cart.cartItems[0].product.vendor_id;
 
     const stripeacc = await this.walletService.findOneByVendorId(vendorId);
+    const vendorIds = {};
+    cart.cartItems.forEach((item) => {
+      const vendorID = item.product.vendor_id;
+      if (!vendorIds[vendorID]) {
+        vendorIds[vendorID] = item.product.price;
+      }
+      vendorIds[vendorID] += item.product.price;
+    });
 
     // const platformFeePercent = 0.10;
 
@@ -58,17 +68,18 @@ export class StripeService {
       expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
-      payment_intent_data: {
-        transfer_data: {
-          destination: stripeacc,
-        },
-      },
+      // payment_intent_data: {
+      //   transfer_data: {
+      //     destination: JSON.stringify(Object.keys(vendorIds)),
+      //   },
+      // },
 
       shipping_address_collection: {
         allowed_countries: ['EG', 'US'],
       },
       metadata: {
         client_email: cart.client_email,
+        vendors: JSON.stringify(Object.keys(vendorIds)),
       },
 
       phone_number_collection: {
@@ -224,8 +235,6 @@ export class StripeService {
 
     //  Return a response to acknowledge receipt of the event
     res.status(200).send({ received: true });
-
-
   }
   async refund(payment_intentId: string) {
     console.log('debugging refund amount');
@@ -299,18 +308,6 @@ export class StripeService {
     const payment_intent =
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
-    const destination = payment_intent.transfer_data?.destination;
-    const wallet_vendor2 = await this.walletService.findStripeAccountId(
-      destination as string,
-    );
-
-    if (!wallet_vendor2) {
-      console.log(' Vendor not found for connected account:', destination);
-    } else {
-      console.log(' Found vendor for connected account:', destination);
-    }
-
-    console.log('debugging vendorrrrr Id', wallet_vendor2?.id);
     let customerEmail = '';
 
     // Options: checking where is email
@@ -325,38 +322,59 @@ export class StripeService {
       customerEmail = payment_intent.receipt_email;
     }
 
-    console.log('Using customer email:', customerEmail);
+    const vendorIds = session?.metadata?.vendors
+      ? JSON.parse(session.metadata.vendors)
+      : [];
+    for (const vendorId of vendorIds) {
+      const vendorProduct=await this.OrderServive.getvendorIdProductCost(vendorId);
+      let vendorCost=0;
+      vendorProduct.forEach((item)=>{
+        const prod=Number(item.product.price)
+        vendorCost+=prod
+      })
+      console.log('debugging priccce',vendorCost);
+      
+      const stripeacc = await this.walletService.findOneByVendorId(
+        vendorId as number,
+      );
+      const wallet_vendor2 =
+        await this.walletService.findStripeAccountId(stripeacc);
 
-    // Create order from cart
-    const order = await this.OrderServive.createOrderFromCart(
-      payment_intent,
-      customerEmail,
-    );
+      if (!wallet_vendor2) {
+        console.log(' Vendor not found for connected account:', stripeacc);
+      }
+      const order = await this.OrderServive.createOrderFromCart(
+        payment_intent,
+        customerEmail,
+        vendorId,
+      );
+      try {
+        const order2 = await this.OrderServive.findByPaymentId(
+          payment_intent.id,
+        );
+        const amount2 = vendorCost;
+        const commission = (amount2 * 0.1);
 
-    const amount2 = payment_intent.amount_received;
-    const commission = (amount2 * 0.1) / 100;
+        if (!order2) {
+          console.log(' Order not found after delay');
+          return;
+        }
+
+        const vendorId = wallet_vendor2?.vendor.id as number;
+        const amount = vendorCost;
+        const transaction = await this.walletService.processSaleTransaction(
+          order2.id,
+          vendorId,
+          amount,
+          commission,
+          payment_intent.id,
+        );
+      } catch (error) {
+        console.error(' Error in delayed processing:', error);
+      }
+    }
 
     // Process the vendor payment after a delay
-    try {
-      const order2 = await this.OrderServive.findByPaymentId(payment_intent.id);
-
-      if (!order2) {
-        console.log(' Order not found after delay');
-        return;
-      }
-
-      const vendorId = wallet_vendor2?.vendor.id as number;
-      const amount = order2.total_amount;
-      const transaction = await this.walletService.processSaleTransaction(
-        order2.id,
-        vendorId,
-        amount,
-        commission,
-        payment_intent.id,
-      );
-    } catch (error) {
-      console.error(' Error in delayed processing:', error);
-    }
   }
 
   async sessiondata(sessionId: string) {

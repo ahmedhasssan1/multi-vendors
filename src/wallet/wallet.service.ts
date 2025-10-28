@@ -153,7 +153,7 @@ export class WalletService {
     await this.syncWalletWithStripe(vendorId);
 
 
-    const amountInCurrency = (amount/100)-commission ;
+    const amountInCurrency = amount-commission ;
     
     console.log('debugging amount 22 :',amountInCurrency );
   

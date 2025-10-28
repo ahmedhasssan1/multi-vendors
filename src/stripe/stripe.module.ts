@@ -13,7 +13,7 @@ import { TransactionsModule } from 'src/transactions/transactions.module';
 // import { sessionSataus } from './sessionstatus.controller';
 
 @Module({
-  imports: [CartItemsModule, forwardRef(() => OrdersModule),TransactionsModule, WalletModule],
+  imports: [CartItemsModule, forwardRef(() => OrdersModule),TransactionsModule, WalletModule,VendorsModule],
   controllers: [StripeController],
   providers: [StripeResolver, StripeService],
   exports: [StripeService],

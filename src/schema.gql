@@ -96,6 +96,7 @@ type Order {
   stripe_payment_intent_id: String!
   stripe_checkout_session_id: String
   client: Client
+  vendor: Vendor
   total_amount: Float!
   status: String!
   customer_name: String
