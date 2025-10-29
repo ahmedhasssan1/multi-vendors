@@ -68,12 +68,7 @@ export class StripeService {
       expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
-      // payment_intent_data: {
-      //   transfer_data: {
-      //     destination: JSON.stringify(Object.keys(vendorIds)),
-      //   },
-      // },
-
+ 
       shipping_address_collection: {
         allowed_countries: ['EG', 'US'],
       },
@@ -314,13 +309,8 @@ export class StripeService {
 
     if (session.customer_details?.email) {
       customerEmail = session.customer_details.email;
-    } else if (payment_intent.metadata?.client_email) {
-      customerEmail = payment_intent.metadata.client_email;
-    } else if (session.metadata?.client_email) {
-      customerEmail = session.metadata.client_email;
-    } else if (payment_intent.receipt_email) {
-      customerEmail = payment_intent.receipt_email;
-    }
+    }      
+  
 
     const vendorIds = session?.metadata?.vendors
       ? JSON.parse(session.metadata.vendors)

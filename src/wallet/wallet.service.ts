@@ -134,7 +134,7 @@ export class WalletService {
       wallet.lastUpdated = new Date();
       console.log('debugging amount', wallet.balance);
 
-      return this.walletRepository.save(wallet);
+      return await this.walletRepository.save(wallet);
     } catch (error) {
       throw new BadRequestException(`Failed to sync wallet: ${error.message}`);
     }
@@ -304,7 +304,7 @@ export class WalletService {
   // Update transaction status
   async updateTransactionStatus(
     transactionId: string,
-    status: 'pending' | 'completed' | 'failed',
+    status: 'pending' | 'completed' | 'failed' | 'refunded',
   ): Promise<Transaction> {
     const transaction = await this.transactionRepository.findOne({
       where: { id: transactionId },
@@ -316,7 +316,7 @@ export class WalletService {
     transaction.status = status;
     transaction.updatedAt = new Date();
 
-    return this.transactionRepository.save(transaction);
+    return await this.transactionRepository.save(transaction);
   }
   async findOneByVendorId(vendorId: number) {
     const wallet_exist = await this.walletRepository.findOne({
