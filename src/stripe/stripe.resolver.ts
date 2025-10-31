@@ -32,7 +32,7 @@ export class StripeResolver {
     return await this.stripeService.sessiondata(session);
   }
   @Mutation(()=>String)
-  async refund(@Args("payment_intent_id")payment_intent:string,){
+  async refund(@Args("payment_intent_id")payment_intent:string){
     return await this.stripeService.refund(payment_intent)
   }
 }

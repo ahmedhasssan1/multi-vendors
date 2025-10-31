@@ -14,6 +14,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { Vendor } from 'src/vendors/entity/vendors.entity';
 import { VendorsService } from 'src/vendors/vendors.service';
 import { ref } from 'process';
+import { PayoutDto } from './dto/payout.dto';
 
 @Injectable()
 export class WalletService {
@@ -204,12 +205,10 @@ export class WalletService {
 
   // Process a payout to vendor
   async processPayout(
-    vendorId: number,
-    amount: number,
-    description = 'Payout to vendor',
+    payoutData:PayoutDto
   ): Promise<Transaction> {
+    const {amount,vendorId,description}=payoutData
     const wallet = await this.getWallet(vendorId);
-
     if (wallet.balance < amount) {
       throw new BadRequestException('Insufficient funds for payout');
     }
@@ -228,7 +227,7 @@ export class WalletService {
 
       const transaction = {
         walletId: wallet.id,
-        amount: -amount,
+        amount: amount,
         type: TransactionType.PAYOUT,
         status: payout.status === 'paid' ? 'completed' : 'pending',
         stripeTransferId: payout.id,
@@ -244,13 +243,14 @@ export class WalletService {
       };
 
       const createTransaction =
-        await this.transactionRepository.create(transaction);
+         this.transactionRepository.create(transaction);
 
       const savedTransaction =
         await this.transactionRepository.save(createTransaction);
       // Update wallet balance
       if (payout.status === 'paid') {
         wallet.balance -= amount;
+        
       } else {
         wallet.pendingBalance -= amount;
       }
