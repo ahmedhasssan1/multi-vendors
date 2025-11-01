@@ -127,13 +127,19 @@ export class ProductsService {
     return mappedRes;
   }
   private _mapResultToIds(vendorIds: readonly number[], products: Product[]) {
-    return vendorIds.map(
+    const data = vendorIds.map(
       (id) => products.filter((prod: Product) => prod.vendor_id === id) || null,
     );
+    console.log('dataloader :', data);
+    return data;
   }
-  async mostPopularProducts():Promise<Product[]>{
-    const most_popular_product=await this.ProductRepo.createQueryBuilder('product').
-    select("product").orderBy("product.number_of_purchases","DESC").getMany()
-    return most_popular_product
+  async mostPopularProducts(): Promise<Product[]> {
+    const most_popular_product = await this.ProductRepo.createQueryBuilder(
+      'product',
+    )
+      .select('product')
+      .orderBy('product.number_of_purchases', 'DESC')
+      .getMany();
+    return most_popular_product;
   }
 }
