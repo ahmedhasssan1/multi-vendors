@@ -25,5 +25,6 @@ async function bootstrap() {
 
   console.log(`HTTP app is running on port ${port}`);
   console.log(`Microservice listening on TCP port 8877`);
+  
 }
 bootstrap();

@@ -130,7 +130,7 @@ export class ProductsService {
     const data = vendorIds.map(
       (id) => products.filter((prod: Product) => prod.vendor_id === id) || null,
     );
-    console.log('dataloader :', data);
+    // console.log('dataloader :', data);
     return data;
   }
   async mostPopularProducts(): Promise<Product[]> {
