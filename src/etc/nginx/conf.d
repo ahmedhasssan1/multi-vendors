@@ -3,16 +3,13 @@ upstream backend {
   server 127.0.0.1:5001;
   server 127.0.0.1:5002;
 
-  # Optional balancing strategies:
-  # least_conn;   # fewer active connections
-  # ip_hash;      # sticky sessions per client
-}
+
 
 server {
   listen 80;
   
   location / {
-    proxy_pass http://backend;
+        proxy_pass http://127.0.0.1:3000/graphql;
 
     # Important headers
     proxy_set_header Host $host;
