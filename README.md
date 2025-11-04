@@ -150,8 +150,8 @@ npm run test:cov
 ## 🔗 Connect With Us
 
 - GitHub: [@ahmedhasssan1](https://github.com/ahmedhasssan1)
-- LinkedIn: [Your Profile](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+
+- Email: ah1585229@gmail.com
 
 ## 📝 License
 
