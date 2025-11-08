@@ -153,11 +153,10 @@ export class WalletService {
 
     await this.syncWalletWithStripe(vendorId);
 
+    const amountInCurrency = amount - commission;
 
-    const amountInCurrency = amount-commission ;
-    
-    console.log('debugging amount 22 :',amountInCurrency );
-  
+    console.log('debugging amount 22 :', amountInCurrency);
+
     const saleTransaction = {
       wallet: wallet,
       amount: amountInCurrency,
@@ -167,7 +166,7 @@ export class WalletService {
       stripePaymentId,
       description: `Sale payment for order #${orderId}`,
       metadata: {
-        originalAmount: amount/100,
+        originalAmount: amount / 100,
         commission: commission,
       },
       createdAt: new Date(),
@@ -176,7 +175,7 @@ export class WalletService {
 
     const commissionTransaction = {
       wallet: wallet,
-      amount: -commission ,
+      amount: -commission,
       type: TransactionType.COMMISSION,
       status: 'completed',
       orderId,
@@ -194,20 +193,16 @@ export class WalletService {
     wallet.pendingBalance += amount - commission;
 
     wallet.balance = wallet.pendingBalance / 100;
-    console.log('debugging  wlalet balance', wallet.balance);
 
     const sales = await this.transactionRepository.save(savedSaleTransaction);
     await this.walletRepository.save(wallet);
     await this.transactionRepository.save(commision);
-    console.log('debugging tranasction', savedSaleTransaction);
     return sales;
   }
 
   // Process a payout to vendor
-  async processPayout(
-    payoutData:PayoutDto
-  ): Promise<Transaction> {
-    const {amount,vendorId,description}=payoutData
+  async processPayout(payoutData: PayoutDto): Promise<Transaction> {
+    const { amount, vendorId, description } = payoutData;
     const wallet = await this.getWallet(vendorId);
     if (wallet.balance < amount) {
       throw new BadRequestException('Insufficient funds for payout');
@@ -242,15 +237,13 @@ export class WalletService {
         updatedAt: new Date(),
       };
 
-      const createTransaction =
-         this.transactionRepository.create(transaction);
+      const createTransaction = this.transactionRepository.create(transaction);
 
       const savedTransaction =
         await this.transactionRepository.save(createTransaction);
       // Update wallet balance
       if (payout.status === 'paid') {
         wallet.balance -= amount;
-        
       } else {
         wallet.pendingBalance -= amount;
       }
@@ -264,7 +257,7 @@ export class WalletService {
   }
 
   // Function to process a refund
-  async refundPayment(paymentIntentId: string, ) {
+  async refundPayment(paymentIntentId: string) {
     try {
       const refund = await this.stripe.refunds.create({
         charge: paymentIntentId,

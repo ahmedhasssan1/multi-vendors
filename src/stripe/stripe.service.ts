@@ -64,7 +64,6 @@ export class StripeService {
 
         quantity: item.quantity,
       })),
-
       expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
@@ -304,9 +303,7 @@ export class StripeService {
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
     let customerEmail = '';
-
-    // Options: checking where is email
-
+    
     if (session.customer_details?.email) {
       customerEmail = session.customer_details.email;
     }      
@@ -329,7 +326,7 @@ export class StripeService {
       );
       const wallet_vendor2 =
         await this.walletService.findStripeAccountId(stripeacc);
-
+    
       if (!wallet_vendor2) {
         console.log(' Vendor not found for connected account:', stripeacc);
       }
