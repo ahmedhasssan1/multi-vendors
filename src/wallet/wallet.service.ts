@@ -115,7 +115,7 @@ export class WalletService {
         stripeAccount: wallet.stripeAccountId,
       });
 
-      // wallet.balance =stripeBalance.pending
+      // Set the balance instead of adding to it
       wallet.balance =
         stripeBalance.available.reduce(
           (sum, bal) =>
@@ -132,15 +132,21 @@ export class WalletService {
           0,
         ) / 100;
 
+      // Update last sync time
       wallet.lastUpdated = new Date();
-      console.log('debugging amount', wallet.balance);
 
-      return await this.walletRepository.save(wallet);
+      // Save and return the updated wallet
+      const updatedWallet = await this.walletRepository.save(wallet);
+
+      console.log(
+        `Wallet ${vendorId} synced: Balance=${updatedWallet.balance}, Pending=${updatedWallet.pendingBalance}`,
+      );
+
+      return updatedWallet;
     } catch (error) {
       throw new BadRequestException(`Failed to sync wallet: ${error.message}`);
     }
   }
-
   // Process a sale transaction
   async processSaleTransaction(
     orderId: number,
@@ -149,16 +155,13 @@ export class WalletService {
     commission: number,
     stripePaymentId: string,
   ): Promise<Transaction> {
-    const wallet = await this.getWallet(vendorId);
-
-    await this.syncWalletWithStripe(vendorId);
+    const stripe_wallet = await this.syncWalletWithStripe(vendorId);
+console.log('striopeeeeeeeeeee wal',stripe_wallet);
 
     const amountInCurrency = amount - commission;
 
-    console.log('debugging amount 22 :', amountInCurrency);
-
     const saleTransaction = {
-      wallet: wallet,
+      wallet: stripe_wallet,
       amount: amountInCurrency,
       type: TransactionType.SALE,
       status: 'completed',
@@ -166,7 +169,7 @@ export class WalletService {
       stripePaymentId,
       description: `Sale payment for order #${orderId}`,
       metadata: {
-        originalAmount: amount / 100,
+        originalAmount: amount,
         commission: commission,
       },
       createdAt: new Date(),
@@ -174,7 +177,7 @@ export class WalletService {
     };
 
     const commissionTransaction = {
-      wallet: wallet,
+      wallet: stripe_wallet,
       amount: -commission,
       type: TransactionType.COMMISSION,
       status: 'completed',
@@ -189,21 +192,19 @@ export class WalletService {
       this.transactionRepository.create(saleTransaction);
 
     const commision = this.transactionRepository.create(commissionTransaction);
-
-    wallet.pendingBalance += amount - commission;
-
-    wallet.balance = wallet.pendingBalance / 100;
-
     const sales = await this.transactionRepository.save(savedSaleTransaction);
-    await this.walletRepository.save(wallet);
+    await this.walletRepository.save(stripe_wallet)
     await this.transactionRepository.save(commision);
+
     return sales;
   }
 
   // Process a payout to vendor
   async processPayout(payoutData: PayoutDto): Promise<Transaction> {
     const { amount, vendorId, description } = payoutData;
+
     const wallet = await this.getWallet(vendorId);
+    const accountlink = await this.createAccountLink(wallet.stripeAccountId);
     if (wallet.balance < amount) {
       throw new BadRequestException('Insufficient funds for payout');
     }
@@ -253,6 +254,23 @@ export class WalletService {
       return savedTransaction;
     } catch (error) {
       throw new BadRequestException(`Payout failed: ${error.message}`);
+    }
+  }
+
+  async createAccountLink(accId: string) {
+    try {
+      const accountLink = await this.stripe.accountLinks.create({
+        account: accId,
+        type: 'account_onboarding',
+        refresh_url: 'http://localhost:3000',
+        return_url: 'http://localhost:3000',
+        collect: 'eventually_due',
+      });
+      return accountLink;
+    } catch (err) {
+      throw new BadRequestException(
+        `failed to create accountlink ..${err.message}`,
+      );
     }
   }
 
@@ -311,6 +329,14 @@ export class WalletService {
 
     return await this.transactionRepository.save(transaction);
   }
+  // async TopUp(amount:number){
+  //   const topUp=await this.stripe.topups.create({
+  //     amount,
+  //     currency:'usd',
+  //     description:"top up transaction to exp",
+  //   })
+  // }
+
   async findOneByVendorId(vendorId: number) {
     const wallet_exist = await this.walletRepository.findOne({
       where: { vendor: { id: vendorId } },
@@ -320,6 +346,7 @@ export class WalletService {
       const stripeAcc = await this.createWallet(vendorId);
       return stripeAcc.stripeAccountId;
     }
+
     return wallet_exist.stripeAccountId;
   }
   async findStripeAccountId(id: string) {
