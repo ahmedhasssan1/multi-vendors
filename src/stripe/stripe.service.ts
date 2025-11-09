@@ -67,7 +67,7 @@ export class StripeService {
       expand: ['customer'],
       customer_email: cart.client_email,
       mode: 'payment',
- 
+
       shipping_address_collection: {
         allowed_countries: ['EG', 'US'],
       },
@@ -116,7 +116,6 @@ export class StripeService {
         const order3 = await this.OrderServive.findByPaymentId(
           paymentIntent2.id,
         );
-        console.log('Found order3:', order3?.id);
         const email = paymentIntent2.receipt_email as string;
 
         await this.OrderServive.createOrderFromCart(paymentIntent2.id, email);
@@ -202,10 +201,8 @@ export class StripeService {
           const vendor = await this.walletService.findStripeAccountId(
             event.account,
           );
-          console.log('debugging fi balance avaliable', vendor?.balance);
 
           if (vendor) {
-            // Sync wallet balance
             await this.walletService.syncWalletWithStripe(vendor.id);
           }
         }
@@ -261,6 +258,7 @@ export class StripeService {
         type: 'standard',
         country: vendorData.country,
         email: vendorData.email,
+
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
@@ -270,6 +268,7 @@ export class StripeService {
           name: vendorData.business_name,
           url: vendorData.website,
         },
+
         metadata: {
           vendor_id: vendorData.vendorId,
         },
@@ -303,30 +302,30 @@ export class StripeService {
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
     let customerEmail = '';
-    
+
     if (session.customer_details?.email) {
       customerEmail = session.customer_details.email;
-    }      
-  
+    }
 
     const vendorIds = session?.metadata?.vendors
       ? JSON.parse(session.metadata.vendors)
       : [];
     for (const vendorId of vendorIds) {
-      const vendorProduct=await this.OrderServive.getvendorIdProductCost(vendorId);
-      let vendorCost=0;
-      vendorProduct.forEach((item)=>{
-        const prod=Number(item.product.price)
-        vendorCost+=prod
-      })
-      console.log('debugging priccce',vendorCost);
-      
+      const vendorProduct =
+        await this.OrderServive.getvendorIdProductCost(vendorId);
+      let vendorCost = 0;
+      vendorProduct.forEach((item) => {
+        const prod = Number(item.product.price);
+        vendorCost += prod;
+      });
+      console.log('debugging priccce', vendorCost);
+
       const stripeacc = await this.walletService.findOneByVendorId(
         vendorId as number,
       );
       const wallet_vendor2 =
         await this.walletService.findStripeAccountId(stripeacc);
-    
+
       if (!wallet_vendor2) {
         console.log(' Vendor not found for connected account:', stripeacc);
       }
@@ -340,7 +339,7 @@ export class StripeService {
           payment_intent.id,
         );
         const amount2 = vendorCost;
-        const commission = (amount2 * 0.1);
+        const commission = amount2 * 0.1;
 
         if (!order2) {
           console.log(' Order not found after delay');
