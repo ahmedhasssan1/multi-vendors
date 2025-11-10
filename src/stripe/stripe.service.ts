@@ -127,7 +127,16 @@ export class StripeService {
         console.log(` Payment method attached:`);
         break;
 
-  
+      case 'charge.refunded':
+        const charge_REFUND = event.data.object as Stripe.Charge;
+        console.log(
+          'Charge refunded:',
+          charge_REFUND.id,
+          'Payment Intent:',
+          charge_REFUND.payment_intent,
+        );
+
+        break;
       case 'charge.refunded':
         const refund = event.data.object as Stripe.Refund;
         console.log('Refund updated:', refund.id, 'Status:', refund.status);
@@ -152,6 +161,16 @@ export class StripeService {
             charge.transfer_data.destination as string,
           );
         }
+        break;
+      case 'transfer.created':
+        const transferCreated = event.data.object;
+        console.log('TransferCreated created for:', transferCreated.destination);
+        // Optionally call syncWalletWithStripe(…)
+        break;
+
+      case 'payment.created':
+        const payment = event.data.object;
+        console.log('Payment created in connected account:', payment.id);
         break;
 
       case 'transfer.failed':
@@ -200,6 +219,9 @@ export class StripeService {
         break;
       case 'charge.updated':
         const chargeUpdated = event.data.object as Stripe.Charge;
+        const accFromStripe = await this.stripe.balance.retrieve({
+          stripeAccount: 'acct_1SLe1Y07uNdRZ1r8',
+        });
         console.log(` Charge updated: ${chargeUpdated.id}`);
         break;
 
@@ -291,17 +313,17 @@ export class StripeService {
 
     const payment_intent =
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
-    
-      let customerEmail = '';
+
+    let customerEmail = '';
 
     if (session.customer_details?.email) {
       customerEmail = session.customer_details.email;
     }
 
-    const vendorIds = session?.metadata?.vendors
+    const vendorIdsFromSessionComlete = session?.metadata?.vendors
       ? JSON.parse(session.metadata.vendors)
       : [];
-    for (const vendorId of vendorIds) {
+    for (const vendorId of vendorIdsFromSessionComlete) {
       const vendorProduct =
         await this.OrderServive.getvendorIdProductCost(vendorId);
       let vendorCost = 0;
@@ -309,7 +331,7 @@ export class StripeService {
         const prod = Number(item.product.price);
         vendorCost += prod;
       });
-      console.log('debugging priccce', vendorCost);
+      console.log('debugging pricccccccccccce', vendorCost);
 
       const stripeacc = await this.walletService.findOneByVendorId(
         vendorId as number,
@@ -346,6 +368,7 @@ export class StripeService {
           commission,
           payment_intent.id,
         );
+        console.log('debugging amount in from webhooookl :', amount);
       } catch (error) {
         console.error(' Error in delayed processing:', error);
       }

@@ -77,7 +77,14 @@ export class WalletService {
     const new_walllet = this.walletRepository.create(wallet);
     return await this.walletRepository.save(new_walllet);
   }
-
+  async transferToVendors(vendorStripeAccId: string, amount: number) {
+    const transfer = await this.stripe.transfers.create({
+      amount,
+      currency: 'usd',
+      destination: vendorStripeAccId,
+    });
+    return transfer
+  }
   async checkAccountCapabilities(accountId: string) {
     try {
       const account = await this.stripe.accounts.retrieve(accountId);
@@ -114,8 +121,7 @@ export class WalletService {
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
-      console.log('debugging  acccccccoun :',stripeBalance );
-      
+      console.log('debugging  acccccccoun :', stripeBalance);
 
       // Set the balance instead of adding to it
       wallet.balance =
@@ -157,11 +163,12 @@ export class WalletService {
     commission: number,
     stripePaymentId: string,
   ): Promise<Transaction> {
-    const stripe_wallet = await this.syncWalletWithStripe(vendorId);
-console.log('striopeeeeeeeeeee wal',stripe_wallet);
-
+    const walet2 = await this.getWallet(vendorId);
+    const transferToVendor=await this.transferToVendors(walet2.stripeAccountId,amount);
+    const stripe_wallet=await this.syncWalletWithStripe(vendorId);
     const amountInCurrency = amount - commission;
-
+    console.log('debugging stripeeeeeeeee :',stripe_wallet);
+    
     const saleTransaction = {
       wallet: stripe_wallet,
       amount: amountInCurrency,
@@ -189,13 +196,13 @@ console.log('striopeeeeeeeeeee wal',stripe_wallet);
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
+    
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
 
     const commision = this.transactionRepository.create(commissionTransaction);
     const sales = await this.transactionRepository.save(savedSaleTransaction);
-    await this.walletRepository.save(stripe_wallet)
+    await this.walletRepository.save(stripe_wallet);
     await this.transactionRepository.save(commision);
 
     return sales;
