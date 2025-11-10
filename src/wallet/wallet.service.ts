@@ -114,6 +114,8 @@ export class WalletService {
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
+      console.log('debugging  acccccccoun :',stripeBalance );
+      
 
       // Set the balance instead of adding to it
       wallet.balance =

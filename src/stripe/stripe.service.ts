@@ -127,16 +127,7 @@ export class StripeService {
         console.log(` Payment method attached:`);
         break;
 
-      case 'charge.refunded':
-        const charge_REFUND = event.data.object as Stripe.Charge;
-        console.log(
-          'Charge refunded:',
-          charge_REFUND.id,
-          'Payment Intent:',
-          charge_REFUND.payment_intent,
-        );
-
-        break;
+  
       case 'charge.refunded':
         const refund = event.data.object as Stripe.Refund;
         console.log('Refund updated:', refund.id, 'Status:', refund.status);
@@ -300,8 +291,8 @@ export class StripeService {
 
     const payment_intent =
       await this.stripe.paymentIntents.retrieve(paymentIntentId);
-
-    let customerEmail = '';
+    
+      let customerEmail = '';
 
     if (session.customer_details?.email) {
       customerEmail = session.customer_details.email;
