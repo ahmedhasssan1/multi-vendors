@@ -75,10 +75,9 @@ export class WalletService {
     return await this.walletRepository.save(new_walllet);
   }
   async transferToVendors(vendorStripeAccId: string, amount: number) {
-    const real_amount = amount * 100;
-
+    const amountInCents = Math.round(amount * 100);
     const transfer = await this.stripe.transfers.create({
-      amount: real_amount,
+      amount: amountInCents,
       currency: 'usd',
       destination: vendorStripeAccId,
     });
