@@ -164,7 +164,10 @@ export class StripeService {
         break;
       case 'transfer.created':
         const transferCreated = event.data.object;
-        console.log('TransferCreated created for:', transferCreated.destination);
+        console.log(
+          'TransferCreated created for:',
+          transferCreated.destination,
+        );
         // Optionally call syncWalletWithStripe(…)
         break;
 
@@ -351,8 +354,7 @@ export class StripeService {
         const order2 = await this.OrderServive.findByPaymentId(
           payment_intent.id,
         );
-        const amount2 = vendorCost;
-        const commission = amount2 * 0.1;
+        const commission = vendorCost * 0.1;
 
         if (!order2) {
           console.log(' Order not found after delay');
@@ -360,15 +362,14 @@ export class StripeService {
         }
 
         const vendorId = wallet_vendor2?.vendor.id as number;
-        const amount = vendorCost;
         const transaction = await this.walletService.processSaleTransaction(
           order2.id,
           vendorId,
-          amount,
+          vendorCost,
           commission,
           payment_intent.id,
         );
-        console.log('debugging amount in from webhooookl :', amount);
+        console.log('debugging amount in from webhooookl :', vendorCost);
       } catch (error) {
         console.error(' Error in delayed processing:', error);
       }

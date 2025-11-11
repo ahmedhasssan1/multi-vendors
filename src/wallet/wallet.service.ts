@@ -78,11 +78,15 @@ export class WalletService {
     return await this.walletRepository.save(new_walllet);
   }
   async transferToVendors(vendorStripeAccId: string, amount: number) {
+    const real_amount=amount*100;
+    
     const transfer = await this.stripe.transfers.create({
-      amount,
+      amount:real_amount,
       currency: 'usd',
       destination: vendorStripeAccId,
     });
+        console.log('debugging transssssss :',transfer);
+
     return transfer
   }
   async checkAccountCapabilities(accountId: string) {
@@ -130,7 +134,7 @@ export class WalletService {
             sum +
             (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
           0,
-        ) / 100;
+        )/100 ;
 
       wallet.pendingBalance =
         stripeBalance.pending.reduce(
@@ -138,12 +142,10 @@ export class WalletService {
             sum +
             (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
           0,
-        ) / 100;
+        ) ;
 
-      // Update last sync time
       wallet.lastUpdated = new Date();
 
-      // Save and return the updated wallet
       const updatedWallet = await this.walletRepository.save(wallet);
 
       console.log(
@@ -163,14 +165,13 @@ export class WalletService {
     commission: number,
     stripePaymentId: string,
   ): Promise<Transaction> {
-    const walet2 = await this.getWallet(vendorId);
-    const transferToVendor=await this.transferToVendors(walet2.stripeAccountId,amount);
-    const stripe_wallet=await this.syncWalletWithStripe(vendorId);
-    const amountInCurrency = amount - commission;
-    console.log('debugging stripeeeeeeeee :',stripe_wallet);
+    const wallet2=await this.getWallet(vendorId);
+    const transferToVendor=await this.transferToVendors(wallet2.stripeAccountId,amount);
+    const amountInCurrency = transferToVendor.amount - commission;
+    console.log('debugging stripeeeeeeeee :',wallet2);
     
     const saleTransaction = {
-      wallet: stripe_wallet,
+      wallet: wallet2,
       amount: amountInCurrency,
       type: TransactionType.SALE,
       status: 'completed',
@@ -186,7 +187,7 @@ export class WalletService {
     };
 
     const commissionTransaction = {
-      wallet: stripe_wallet,
+      wallet: wallet2,
       amount: -commission,
       type: TransactionType.COMMISSION,
       status: 'completed',
@@ -196,13 +197,14 @@ export class WalletService {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    const stripe_walet=await this.syncWalletWithStripe(vendorId)
+    console.log('debugging ',stripe_walet);
     
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
 
     const commision = this.transactionRepository.create(commissionTransaction);
     const sales = await this.transactionRepository.save(savedSaleTransaction);
-    await this.walletRepository.save(stripe_wallet);
     await this.transactionRepository.save(commision);
 
     return sales;
