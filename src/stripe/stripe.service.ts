@@ -111,7 +111,6 @@ export class StripeService {
 
       case 'payment_intent.succeeded':
         const paymentIntent2 = event.data.object as Stripe.PaymentIntent;
-        console.log('Payment intent succeeded:', paymentIntent2);
 
         const order3 = await this.OrderServive.findByPaymentId(
           paymentIntent2.id,
@@ -129,17 +128,10 @@ export class StripeService {
 
       case 'charge.refunded':
         const charge_REFUND = event.data.object as Stripe.Charge;
-        console.log(
-          'Charge refunded:',
-          charge_REFUND.id,
-          'Payment Intent:',
-          charge_REFUND.payment_intent,
-        );
 
         break;
       case 'charge.refunded':
         const refund = event.data.object as Stripe.Refund;
-        console.log('Refund updated:', refund.id, 'Status:', refund.status);
 
         if (refund.status === 'succeeded') {
           console.log('Refund succeeded');
@@ -164,7 +156,7 @@ export class StripeService {
         break;
       case 'transfer.created':
         const transferCreated = event.data.object;
-        console.log(
+       console.log(
           'TransferCreated created for:',
           transferCreated.destination,
         );
@@ -258,7 +250,6 @@ export class StripeService {
         payment_intent: payment_intentId,
         reason: 'requested_by_customer',
       });
-      console.log('debugging refund', refund);
 
       return 'refund process done successfully';
     } catch (error) {
@@ -334,7 +325,6 @@ export class StripeService {
         const prod = Number(item.product.price);
         vendorCost += prod;
       });
-      console.log('debugging pricccccccccccce', vendorCost);
 
       const stripeacc = await this.walletService.findOneByVendorId(
         vendorId as number,
@@ -369,7 +359,6 @@ export class StripeService {
           commission,
           payment_intent.id,
         );
-        console.log('debugging amount in from webhooookl :', vendorCost);
       } catch (error) {
         console.error(' Error in delayed processing:', error);
       }

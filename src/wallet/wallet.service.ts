@@ -46,7 +46,6 @@ export class WalletService {
     if (!vendor) {
       throw new NotFoundException('this vendor not  exist');
     }
-    console.log('debugging inside wallet', vendor.email);
 
     const account = await this.stripe.accounts.create({
       type: 'standard',
@@ -61,7 +60,6 @@ export class WalletService {
       metadata: { vendorId: vendorId },
     });
     const checkacc = await this.checkAccountCapabilities(account.id);
-    console.log('debugging check', account);
 
     // Create new wallet
     const wallet = {
@@ -72,34 +70,25 @@ export class WalletService {
       currency,
       lastUpdated: new Date(),
     };
-    console.log('debugging check', wallet);
 
     const new_walllet = this.walletRepository.create(wallet);
     return await this.walletRepository.save(new_walllet);
   }
   async transferToVendors(vendorStripeAccId: string, amount: number) {
-    const real_amount=amount*100;
-    
+    const real_amount = amount * 100;
+
     const transfer = await this.stripe.transfers.create({
-      amount:real_amount,
+      amount: real_amount,
       currency: 'usd',
       destination: vendorStripeAccId,
     });
-        console.log('debugging transssssss :',transfer);
 
-    return transfer
+    return transfer;
   }
   async checkAccountCapabilities(accountId: string) {
     try {
       const account = await this.stripe.accounts.retrieve(accountId);
-      console.log(
-        'Transfer capability status:',
-        account.capabilities?.transfers,
-      );
-      console.log(
-        'Requirements currently due:',
-        account.requirements?.currently_due,
-      );
+
       return account.capabilities;
     } catch (error) {
       throw new BadRequestException(
@@ -125,7 +114,6 @@ export class WalletService {
       const stripeBalance = await this.stripe.balance.retrieve({
         stripeAccount: wallet.stripeAccountId,
       });
-      console.log('debugging  acccccccoun :', stripeBalance);
 
       // Set the balance instead of adding to it
       wallet.balance =
@@ -134,15 +122,14 @@ export class WalletService {
             sum +
             (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
           0,
-        )/100 ;
+        ) / 100;
 
-      wallet.pendingBalance =
-        stripeBalance.pending.reduce(
-          (sum, bal) =>
-            sum +
-            (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
-          0,
-        ) ;
+      wallet.pendingBalance = stripeBalance.pending.reduce(
+        (sum, bal) =>
+          sum +
+          (bal.currency === wallet.currency.toLowerCase() ? bal.amount : 0),
+        0,
+      );
 
       wallet.lastUpdated = new Date();
 
@@ -165,11 +152,13 @@ export class WalletService {
     commission: number,
     stripePaymentId: string,
   ): Promise<Transaction> {
-    const wallet2=await this.getWallet(vendorId);
-    const transferToVendor=await this.transferToVendors(wallet2.stripeAccountId,amount);
+    const wallet2 = await this.getWallet(vendorId);
+    const transferToVendor = await this.transferToVendors(
+      wallet2.stripeAccountId,
+      amount,
+    );
     const amountInCurrency = transferToVendor.amount - commission;
-    console.log('debugging stripeeeeeeeee :',wallet2);
-    
+
     const saleTransaction = {
       wallet: wallet2,
       amount: amountInCurrency,
@@ -197,12 +186,9 @@ export class WalletService {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    const stripe_walet=await this.syncWalletWithStripe(vendorId)
-    console.log('debugging ',stripe_walet);
-    
+    await this.syncWalletWithStripe(vendorId);
     const savedSaleTransaction =
       this.transactionRepository.create(saleTransaction);
-
     const commision = this.transactionRepository.create(commissionTransaction);
     const sales = await this.transactionRepository.save(savedSaleTransaction);
     await this.transactionRepository.save(commision);
@@ -293,7 +279,6 @@ export class WalletService {
         reason: 'requested_by_customer',
         // amount: amount,
       });
-      console.log('debugging refund', refund);
 
       return refund;
     } catch (error) {
