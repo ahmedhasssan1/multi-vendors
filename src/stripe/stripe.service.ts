@@ -14,6 +14,7 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
 import { Vendor } from 'src/vendors/entity/vendors.entity';
 import { VendorsService } from 'src/vendors/vendors.service';
+import { SaleTransactionDto } from 'src/wallet/dto/sales.dto';
 
 @Injectable()
 export class StripeService {
@@ -156,7 +157,7 @@ export class StripeService {
         break;
       case 'transfer.created':
         const transferCreated = event.data.object;
-       console.log(
+        console.log(
           'TransferCreated created for:',
           transferCreated.destination,
         );
@@ -350,15 +351,16 @@ export class StripeService {
           console.log(' Order not found after delay');
           return;
         }
-
         const vendorId = wallet_vendor2?.vendor.id as number;
-        const transaction = await this.walletService.processSaleTransaction(
-          order2.id,
-          vendorId,
-          vendorCost,
+        const dto: SaleTransactionDto = {
+          orderId: order2.id,
+          vendorId: vendorId,
+          amount: vendorCost,
           commission,
-          payment_intent.id,
-        );
+          stripePaymentId: payment_intent.id,
+        };
+        const transaction =
+          await this.walletService.processSaleTransaction(dto);
       } catch (error) {
         console.error(' Error in delayed processing:', error);
       }

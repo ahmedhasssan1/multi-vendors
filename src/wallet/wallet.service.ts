@@ -15,6 +15,7 @@ import { Vendor } from 'src/vendors/entity/vendors.entity';
 import { VendorsService } from 'src/vendors/vendors.service';
 import { ref } from 'process';
 import { PayoutDto } from './dto/payout.dto';
+import { SaleTransactionDto } from './dto/sales.dto';
 
 @Injectable()
 export class WalletService {
@@ -145,12 +146,10 @@ export class WalletService {
   }
   // Process a sale transaction
   async processSaleTransaction(
-    orderId: number,
-    vendorId: number,
-    amount: number,
-    commission: number,
-    stripePaymentId: string,
+    data:SaleTransactionDto
   ): Promise<Transaction> {
+      const { orderId, vendorId, amount, commission, stripePaymentId } = data;
+
     const wallet2 = await this.getWallet(vendorId);
     const transferToVendor = await this.transferToVendors(
       wallet2.stripeAccountId,
