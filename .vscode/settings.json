@@ -10,7 +10,7 @@
       "server": "localhost",
       "port": 3306,
       "driver": "MySQL",
-      "name": "test3",
+      "name": "test2",
       "username": "root",
       "database": "vendors"
     }

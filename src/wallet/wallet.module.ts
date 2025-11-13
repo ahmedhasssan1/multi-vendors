@@ -6,9 +6,10 @@ import { Transaction } from 'src/transactions/entity/transaction.entity';
 import { OrdersModule } from 'src/orders/orders.module';
 import { Wallet } from './entity/wallet.entity';
 import { VendorsModule } from 'src/vendors/vendors.module';
+import { ClientAccount } from './entity/clientAccount.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Wallet, Transaction]), OrdersModule,VendorsModule],
+  imports: [TypeOrmModule.forFeature([Wallet, Transaction,ClientAccount]), OrdersModule,VendorsModule],
   providers: [WalletResolver, WalletService],
   exports:[WalletService]
 })

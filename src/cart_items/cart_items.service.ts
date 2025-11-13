@@ -212,8 +212,9 @@ export class CartItemsService {
     const total_price = cart.total_price;
     const client_email = cart.client.email;
     console.log('debugging ', client_email);
+    const client_id=client.id
 
-    return { total_price, cartItems, client_email };
+    return { total_price, cartItems, client_email,client_id };
   }
   async getClientItemsById(id: number): Promise<CartItem[]> {
     const cartItems = await this.cartItemRepo.find({

@@ -16,6 +16,9 @@ import { VendorsService } from 'src/vendors/vendors.service';
 import { ref } from 'process';
 import { PayoutDto } from './dto/payout.dto';
 import { SaleTransactionDto } from './dto/sales.dto';
+import { TransferFromClientDto } from './dto/transfer.dto';
+import { ClientAccount } from './entity/clientAccount.entity';
+import { createclientAcc } from './dto/clientAccCreate.dto';
 
 @Injectable()
 export class WalletService {
@@ -23,10 +26,11 @@ export class WalletService {
 
   constructor(
     @InjectRepository(Wallet) private walletRepository: Repository<Wallet>,
+    @InjectRepository(ClientAccount)
+    private CleintAccRepo: Repository<ClientAccount>,
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private configService: ConfigService,
-    private orderService: OrdersService,
     private VendorServie: VendorsService,
   ) {
     const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
@@ -145,10 +149,8 @@ export class WalletService {
     }
   }
   // Process a sale transaction
-  async processSaleTransaction(
-    data:SaleTransactionDto
-  ): Promise<Transaction> {
-      const { orderId, vendorId, amount, commission, stripePaymentId } = data;
+  async processSaleTransaction(data: SaleTransactionDto): Promise<Transaction> {
+    const { orderId, vendorId, amount, commission, stripePaymentId } = data;
 
     const wallet2 = await this.getWallet(vendorId);
     const transferToVendor = await this.transferToVendors(
@@ -354,5 +356,55 @@ export class WalletService {
       console.log('no stripe acc for this stripe acc id');
     }
     return stripeAcc;
+  }
+  async createFfinancial_account(client_id: number) {
+    const financialAccount =
+      await this.stripe.treasury.financialAccounts.create({
+        supported_currencies: ['usd'],
+        features: {
+          card_issuing: { requested: true },
+          deposit_insurance: { requested: true },
+          financial_addresses: { aba: { requested: true } },
+          inbound_transfers: { ach: { requested: true } },
+          intra_stripe_flows: { requested: true },
+          outbound_payments: {
+            ach: { requested: true },
+            us_domestic_wire: { requested: true },
+          },
+          outbound_transfers: {
+            ach: { requested: true },
+            us_domestic_wire: { requested: true },
+          },
+        },
+        metadata: {
+          client_id,
+        },
+      });
+    const account: createclientAcc = {
+      client_id: client_id,
+      financial_acc: financialAccount.id,
+    };
+    const new_acc = this.CleintAccRepo.create(account);
+    const newClientAccount = await this.CleintAccRepo.save(new_acc);
+    return newClientAccount;
+  }
+  async transferFromClientToVendor(data: TransferFromClientDto) {
+    let financialAccount = await this.CleintAccRepo.findOne({
+      where: { client_id: data.client_id },
+    });
+
+    if (!financialAccount) {
+      financialAccount = await this.createFfinancial_account(data.client_id);
+    }
+
+    const outboundPayment = await this.stripe.treasury.outboundPayments.create({
+      financial_account: financialAccount.financial_account,
+      amount: Math.round(data.amount * 100),
+      currency: 'usd',
+      destination_payment_method: data.vendorAcc,
+      description: 'Streamer earnings',
+    });
+
+    return outboundPayment;
   }
 }
