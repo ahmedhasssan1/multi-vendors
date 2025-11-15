@@ -1,1 +1,1 @@
-SELECT * FROM wallet
+SELECT * FROM client_account

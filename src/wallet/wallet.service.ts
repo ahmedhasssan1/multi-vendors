@@ -151,13 +151,15 @@ export class WalletService {
   // Process a sale transaction
   async processSaleTransaction(data: SaleTransactionDto): Promise<Transaction> {
     const { orderId, vendorId, amount, commission, stripePaymentId } = data;
-
+    
     const wallet2 = await this.getWallet(vendorId);
-    const transferToVendor = await this.transferToVendors(
+    const top_up=await this.TopUp(amount*100);
+    
+    const amountInCurrency = amount - commission;
+    const transforToVendor = await this.transferToVendors(
       wallet2.stripeAccountId,
-      amount,
+      amountInCurrency
     );
-    const amountInCurrency = transferToVendor.amount - commission;
 
     const saleTransaction = {
       wallet: wallet2,
@@ -325,13 +327,14 @@ export class WalletService {
 
     return await this.transactionRepository.save(transaction);
   }
-  // async TopUp(amount:number){
-  //   const topUp=await this.stripe.topups.create({
-  //     amount,
-  //     currency:'usd',
-  //     description:"top up transaction to exp",
-  //   })
-  // }
+  async TopUp(amount:number){
+    const topUp=await this.stripe.topups.create({
+      amount,
+      currency:'usd',
+      description:"top up transaction to exp",
+    })
+    return topUp
+  }
 
   async findOneByVendorId(vendorId: number) {
     const wallet_exist = await this.walletRepository.findOne({
