@@ -1,5 +1,6 @@
 import { Field, InputType } from "@nestjs/graphql";
 import { IsNumber, IsString } from "class-validator";
+import { Wallet } from "../entity/wallet.entity";
 
 @InputType()
 export class PayoutDto{
@@ -14,4 +15,9 @@ export class PayoutDto{
     @Field()
     @IsString()
     description:string
+
+      @Field()
+    @IsString()
+    stripeAccount:string
+
 }

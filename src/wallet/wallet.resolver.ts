@@ -7,10 +7,10 @@ import { PayoutDto } from './dto/payout.dto';
 export class WalletResolver {
   constructor(private readonly walletService: WalletService) {}
 
-    @Mutation(()=>Transaction)
-    async createPayout(@Args("payoutInput")payoutData:PayoutDto){
-      return await this.walletService.processPayout(payoutData)
-    }
+    // @Mutation(()=>Transaction)
+    // async createPayout(@Args("payoutInput")payoutData:PayoutDto){
+    //   return await this.walletService.processPayout(payoutData)
+    // }
     
     
   

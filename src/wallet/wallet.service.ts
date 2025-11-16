@@ -154,8 +154,15 @@ export class WalletService {
     
     const wallet2 = await this.getWallet(vendorId);
     const top_up=await this.TopUp(amount*100);
-    
     const amountInCurrency = amount - commission;
+    const pay:PayoutDto={
+      vendorId,
+      amount:amountInCurrency,
+      description:"payout to vendor",
+      stripeAccount:wallet2.stripeAccountId,
+    }
+    const payout =await this.processPayout(pay,wallet2);
+    
     const transforToVendor = await this.transferToVendors(
       wallet2.stripeAccountId,
       amountInCurrency
@@ -199,29 +206,24 @@ export class WalletService {
   }
 
   // Process a payout to vendor
-  async processPayout(payoutData: PayoutDto): Promise<Transaction> {
-    const { amount, vendorId, description } = payoutData;
+  async processPayout(payoutData: PayoutDto,walet:Wallet): Promise<Transaction> {
+    const { amount, vendorId, description,stripeAccount } = payoutData;
 
-    const wallet = await this.getWallet(vendorId);
-    const accountlink = await this.createAccountLink(wallet.stripeAccountId);
-    if (wallet.balance < amount) {
-      throw new BadRequestException('Insufficient funds for payout');
-    }
 
     try {
       const payout = await this.stripe.payouts.create(
         {
           amount: Math.round(amount * 100),
-          currency: wallet.currency.toLowerCase(),
+          currency: "usd",
           description: description,
         },
         {
-          stripeAccount: wallet.stripeAccountId,
+          stripeAccount: stripeAccount,
         },
       );
 
       const transaction = {
-        walletId: wallet.id,
+        walletId: walet,
         amount: amount,
         type: TransactionType.PAYOUT,
         status: payout.status === 'paid' ? 'completed' : 'pending',
@@ -242,13 +244,13 @@ export class WalletService {
       const savedTransaction =
         await this.transactionRepository.save(createTransaction);
       // Update wallet balance
-      if (payout.status === 'paid') {
-        wallet.balance -= amount;
-      } else {
-        wallet.pendingBalance -= amount;
-      }
+      // if (payout.status === 'paid') {
+      //   wallet.balance -= amount;
+      // } else {
+      //   wallet.pendingBalance -= amount;
+      // }
 
-      await this.walletRepository.save(wallet);
+      // await this.walletRepository.save(wallet);
 
       return savedTransaction;
     } catch (error) {

@@ -203,7 +203,6 @@ type Mutation {
   addProduct(addProductInfo: CartItemDto!): CartItem!
   increaseCartItemQuantiy(increaseData: QuantityDto!): CartItem!
   deleteCartItem(cartItemData: Float!): String!
-  createPayout(payoutInput: PayoutDto!): Transaction!
   followVendor(followInput: FollowVendorDto!): Followers!
   unfollow(unfollwInfo: Float!): String!
   createComment(commentInfo: commentDto!): Comment!
@@ -250,12 +249,6 @@ input CartItemDto {
 input QuantityDto {
   quantity: Float!
   product_id: Float!
-}
-
-input PayoutDto {
-  vendorId: Float!
-  amount: Float!
-  description: String!
 }
 
 input FollowVendorDto {
