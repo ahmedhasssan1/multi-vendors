@@ -28,6 +28,7 @@ import { BullmqModule } from './bullmq/bullmq.module';
 import { EmailModule } from './email/email.module';
 // import { genrevendorLoader } from './loaders/vensorsProducts';
 // import { createVendorLoader } from './products/dataloader/vensorsProducts';
+import { WebsocktModule } from './websockt/websockt.module';
 import { ClusterModule } from './cluster/cluster.module';
 // import { MicroservicesModule } from '@nestjs/microservices';
 
@@ -99,6 +100,7 @@ import { Transaction } from './transactions/entity/transaction.entity';
     WalletModule,
     TransactionsModule,
     ClusterModule,
+    WebsocktModule,
   
     // MicroservicesModule
   ],
